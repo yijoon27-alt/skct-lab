@@ -26,7 +26,7 @@ test('백업·가져오기·통계',async({page})=>{
  const promise=page.waitForEvent('download');await page.getByRole('button',{name:'JSON 백업'}).click();const dl=await promise;await dl.saveAs('test-results/backup.json');await page.locator('input[type=file]').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{"version":7}')});await expect(page.locator('.toast')).toContainText('지원하지 않는');await page.locator('input[type=file]').setInputFiles('test-results/backup.json');await page.getByRole('button',{name:'현재 백업 후 복원'}).click();await expect(page.locator('.toast')).toContainText('복원');await page.getByRole('button',{name:'나의 학습 통계'}).click();await expect(page.getByRole('heading',{name:'유형별 정답률'})).toBeVisible();
 });
 test('데스크톱·신고·문제은행',async({page})=>{
- await page.setViewportSize({width:1440,height:1100});await page.getByRole('button',{name:'시작',exact:true}).click();await page.getByRole('button',{name:'문제 신고',exact:true}).click();await page.getByPlaceholder('어떤 조건이나 풀이가 잘못되었는지 남겨주세요.').fill('검토 요청');await page.getByRole('button',{name:'신고 저장'}).click();const reports=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).reports,key);expect(reports[0].question.seed).toBeGreaterThan(0);expect(reports[0].question.generatorVersion).toBe('1.1.0');const correct=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).session.questions[0].correctAnswer,key);await page.getByRole('radio').nth((correct+1)%5).click();await page.getByRole('button',{name:/정답 제출/}).click();await page.screenshot({path:'docs/desktop.png',fullPage:true});await page.getByRole('button',{name:'문제은행',exact:true}).click();await page.getByRole('textbox',{name:'문제 유형 검색'}).fill('선출발');await expect(page.getByRole('button',{name:'문제 보기',exact:true})).toHaveCount(1);
+ await page.setViewportSize({width:1440,height:1100});await page.getByRole('button',{name:'시작',exact:true}).click();await page.getByRole('button',{name:'문제 신고',exact:true}).click();await page.getByPlaceholder('어떤 조건이나 풀이가 잘못되었는지 남겨주세요.').fill('검토 요청');await page.getByRole('button',{name:'신고 저장'}).click();const reports=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).reports,key);expect(reports[0].question.seed).toBeGreaterThan(0);expect(reports[0].question.generatorVersion).toBe('1.2.0');const correct=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).session.questions[0].correctAnswer,key);await page.getByRole('radio').nth((correct+1)%5).click();await page.getByRole('button',{name:/정답 제출/}).click();await page.screenshot({path:'docs/desktop.png',fullPage:true});await page.getByRole('button',{name:'문제은행',exact:true}).click();await page.getByRole('textbox',{name:'문제 유형 검색'}).fill('선출발');await expect(page.getByRole('button',{name:'문제 보기',exact:true})).toHaveCount(1);
 });
 test('집중훈련·20문항 이동·분수·모바일 도구 접근',async({page})=>{
  await page.getByRole('button',{name:'유형별 집중 훈련',exact:true}).click();await page.getByRole('combobox',{name:'시험 영역',exact:true}).selectOption('sequence');await page.getByRole('button',{name:'분자·분모 독립 규칙',exact:false}).click();await page.getByRole('button',{name:'새 문제 20개 시작',exact:false}).click();await page.getByRole('button',{name:'시작',exact:true}).click();
@@ -112,5 +112,42 @@ test('수리·수열 문제 이동·번호 이동·자동 다음에서 계산기
   await page.getByRole('button',{name:'풀이 보기',exact:true}).click();
   await expect(page.locator('.explanation')).toBeVisible();
   await expect(page.getByRole('button',{name:'이 식을 메모장에 넣기',exact:true})).toBeVisible();
+ }
+});
+
+test('최신 유형 출제 구성·도형 보기·풀이·모바일·백업 복원',async({page})=>{
+ await page.getByRole('button',{name:'수열추리',exact:false}).first().click();
+ const replacement=page.getByRole('button',{name:'마치고 새로 시작',exact:true});if(await replacement.isVisible())await replacement.click();
+ const snapshot=await page.evaluate(()=>JSON.parse(localStorage.getItem('skct-lab:v1')!));
+ expect(snapshot.session.questions.filter((q:any)=>q.subtype.startsWith('refseq-'))).toHaveLength(13);
+ const diagramIndex=snapshot.session.questions.findIndex((q:any)=>q.diagram);
+ const q=snapshot.session.questions[diagramIndex];
+ await page.getByRole('button',{name:`${diagramIndex+1}번 문제`,exact:true}).click();
+ await expect(page.locator('.question-diagram,.cross-diagrams')).toBeVisible();
+ await expect(page.locator('.question-text')).not.toContainText(q.category);
+ await expect(page.locator('.question-diagram,.cross-diagrams')).toContainText('(A)');
+ await page.getByRole('button',{name:'풀이 보기',exact:true}).click();
+ await expect(page.locator('.explanation')).toContainText(q.memo);
+ await page.reload();await expect(page.locator('.question-diagram,.cross-diagrams')).toBeVisible();
+ await page.setViewportSize({width:390,height:844});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:'docs/reference-mobile.png',fullPage:true});
+ await page.setViewportSize({width:1440,height:1100});await page.evaluate(()=>window.scrollTo(0,0));await page.waitForTimeout(300);await page.screenshot({path:'docs/reference-desktop.png',fullPage:false});
+});
+
+test('새 유형 문제은행·조건부 확률·두 도형 형식·집중훈련 20개',async({page})=>{
+ for(const [area,search] of [['creative','조건부 확률 · 생산 출처'],['sequence','격자 · 행 관계'],['sequence','도형 · 교차 관계']] as const){
+  await page.getByRole('button',{name:'문제은행',exact:true}).click();
+  await page.getByRole('combobox',{name:'문제은행 영역'}).selectOption(area);
+  await page.getByRole('textbox',{name:'문제 유형 검색'}).fill(search);
+  await page.getByRole('button',{name:'문제 보기',exact:true}).click();
+  if(area==='sequence')await expect(page.getByRole('dialog').locator('.question-diagram,.cross-diagrams')).toBeVisible();
+  if(search==='격자 · 행 관계')await page.screenshot({path:'docs/reference-grid.png',fullPage:false});
+  await page.getByRole('button',{name:'대화상자 닫기'}).click();
+  await page.getByRole('button',{name:'연습',exact:true}).click();
+  const replace=page.getByRole('button',{name:'마치고 새로 시작',exact:true});if(await replace.isVisible())await replace.click();
+  const questions=await page.evaluate(()=>JSON.parse(localStorage.getItem('skct-lab:v1')!).session.questions);
+  expect(questions).toHaveLength(20);expect(new Set(questions.map((q:any)=>q.question)).size).toBe(20);
+  await page.getByRole('button',{name:'풀이 보기',exact:true}).click();await expect(page.locator('.explanation')).toBeVisible();
  }
 });
