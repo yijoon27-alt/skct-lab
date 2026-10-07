@@ -5,8 +5,8 @@ import { calculate } from '../src/engine/math';
 import { calibrationErrors } from '../src/engine/calibration';
 import { emptyStore,parseBackup } from '../src/engine/storage';
 import { createSession,grade,getStats,finish,revealSolution } from '../src/engine/session';
-it('신규 출제 31,500개는 숫자 규모·분모 기준 및 독립 검산을 통과',()=>{
- for(const t of practiceTemplates)for(let seed=1;seed<=500;seed++){const q=generateVerified(t,seed*7919);expect(calibrationErrors(q),q.id).toEqual([]);expect(q.generatorVersion).toBe('1.1.0');}
+it('신규 출제 40,000개는 숫자 규모·분모 기준 및 독립 검산을 통과',()=>{
+ for(const t of practiceTemplates)for(let seed=1;seed<=500;seed++){const q=generateVerified(t,seed*7919);expect(calibrationErrors(q),q.id).toEqual([]);expect(q.generatorVersion).toBe('1.2.0');}
 });
 it('단순히 큰 숫자를 쓰는 문항은 런타임 출제에서 차단',()=>{
  const q=generateVerified(practiceTemplates.find(t=>t.id==='count-4')!,79);
@@ -16,12 +16,12 @@ it('단순히 큰 숫자를 쓰는 문항은 런타임 출제에서 차단',()=>
 it('수열 질문은 중간 빈칸·합·차·먼 항을 모두 제공하며 최소 메모식으로 검산 가능',()=>{
  const kinds=new Set<number>();
  for(const t of practiceTemplates.filter(t=>t.area==='sequence'))for(let seed=1;seed<=30;seed++){
-  const q=generateVerified(t,seed*179);kinds.add(q.facts.queryKind);
+  const q=generateVerified(t,seed*179);if(q.sequence)kinds.add(q.facts.queryKind);
   expect(q.question).not.toContain(q.rule);expect(calculate(q.memo)).toBeCloseTo(q.answer);
   if(q.facts.queryKind===1)expect(q.question).toContain('(A)+(B)');
   if(q.facts.queryKind===2)expect(q.question).toContain('(B)−(A)');
-  const bad=structuredClone(q);bad.facts.indexA=99;expect(validate(bad)).toContain('독립 조건 검산 실패');
- }expect([...kinds].sort()).toEqual([0,1,2,3]);
+  const bad=structuredClone(q);if(q.sequence){bad.facts.indexA=99;expect(validate(bad)).toContain('독립 조건 검산 실패');}
+ }expect([...kinds].sort()).toEqual([0,1,2,3,4,5]);
 });
 it('구버전 생성기 555개 및 구·신 문항 혼합 백업을 계속 복원',()=>{
  for(const t of legacyTemplates)for(let seed=1;seed<=5;seed++){const q=t.generate(seed*179);expect(validate(q),q.id).toEqual([]);expect(reproduce(q)).toEqual(q);}

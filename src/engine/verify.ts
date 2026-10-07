@@ -1,4 +1,5 @@
 import { calculate, close, format } from './math';
+import { verifyReference } from './referenceVerify';
 import { calibrationErrors } from './calibration';
 import type { Question } from './types';
 // No generator imports. Validate conditions against the proposed answer, not its construction formula.
@@ -10,6 +11,7 @@ function arrangements(n:number, predicate:(v:number[])=>boolean):number {
 }
 function paths(x:number,y:number):number {const dp=Array.from({length:x+1},()=>Array(y+1).fill(1));for(let a=1;a<=x;a++)for(let b=1;b<=y;b++)dp[a][b]=dp[a-1][b]+dp[a][b-1];return dp[x][y];}
 export function verifyAnswer(q:Question):boolean {
+ if(q.subtype.startsWith('bayes-')||q.subtype.startsWith('refseq-'))return q.generatorVersion==='1.2.0'&&verifyReference(q);
  const x=q.answer,f=q.facts,id=q.subtype.split('-')[0],i=Number(q.subtype.split('-')[1]);const eq=close;
  if(id==='speed'){
   const {slow:s,fast:v,t,dist:d,c,a,b}=f;
@@ -112,8 +114,8 @@ export function verifyExplanation(q:Question):boolean {
 export function validate(q:Question):string[] {
  const errors:string[]=[];
  if(!q||typeof q.question!=='string'||!q.question.trim()||q.question.length>6000)return ['문항 구조 오류'];
- if(!Number.isInteger(q.seed)||q.seed<0||q.seed>4294967295||!['1.0.0','1.1.0'].includes(q.generatorVersion))errors.push('시드·버전 오류');
- if(q.id!==`${q.subtype}-${q.generatorVersion==='1.0.0'?'v1':'v2'}-${q.seed}`)errors.push('문항 식별자 오류');
+ if(!Number.isInteger(q.seed)||q.seed<0||q.seed>4294967295||!['1.0.0','1.1.0','1.2.0'].includes(q.generatorVersion))errors.push('시드·버전 오류');
+ if(q.id!==`${q.subtype}-${q.generatorVersion==='1.0.0'?'v1':q.generatorVersion==='1.1.0'?'v2':'v3'}-${q.seed}`)errors.push('문항 식별자 오류');
  if(!Number.isFinite(q.answer))errors.push('유한하지 않은 정답');
  if(q.options?.length!==5||q.optionValues?.length!==5||!Number.isInteger(q.correctAnswer)||q.correctAnswer<0||q.correctAnswer>4)errors.push('선지 구조 오류');
  else {

@@ -8,7 +8,7 @@ try {
  await page.getByRole('button',{name:'풀이 보기',exact:true}).click();
  await page.locator('.explanation').waitFor();
  const snapshot=await page.evaluate(()=>JSON.parse(localStorage.getItem('skct-lab:v1')));
- assert.equal(snapshot.session.questions[0].generatorVersion,'1.1.0');
+ assert.equal(snapshot.session.questions[0].generatorVersion,'1.2.0');
  assert.equal(snapshot.attempts.length,0);
  await page.getByRole('textbox',{name:'계산식'}).fill('12*3');
  await page.getByRole('textbox',{name:'계산식'}).press('Enter');
@@ -23,5 +23,5 @@ try {
   await page.getByRole('button',{name:'풀이 보기',exact:true}).click();
   await page.locator('.explanation').waitFor();
  }
- console.log('Live Pages: generator 1.1.0, instant solutions in both unlimited areas, calculator reset PASS');
+ console.log('Live Pages: generator 1.2.0, instant solutions in both unlimited areas, calculator reset PASS');
 } finally {await browser.close();}

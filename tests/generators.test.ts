@@ -2,7 +2,7 @@ import { describe,it,expect } from 'vitest';
 import { templates,practiceTemplates,makeSet } from '../src/engine/bank';
 import { validate,verifyAnswer,verifyExplanation } from '../src/engine/verify';
 import { calculate } from '../src/engine/math';
-describe('111개 유형의 독립 검산',()=>{
+describe('128개 유형의 독립 검산',()=>{
  for(const t of templates)it(`${t.id} ${t.name}: 200개 시드`,()=>{
   for(let s=1;s<=200;s++) {const q=t.generate(s*7919);expect(validate(q),q.id).toEqual([]);expect(q).toEqual(t.generate(s*7919));}
  });
