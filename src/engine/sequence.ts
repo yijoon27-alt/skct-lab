@@ -37,7 +37,7 @@ export const sequenceTemplates:Template[]=names.map((name,i)=>{
    }
    terms.push(x);expressions.push(e);
   }
-  // A rule-family constraint is always visible: finite sequences alone cannot determine a unique continuation.
+  // Preserve the rule-family in canonical snapshots; the solve view hides it until feedback.
   const show=(v:number)=>i===18?Number(v.toFixed(1)).toFixed(1):format(v);
   return build(`seq-${i}`,name,'sequence',difficulty,seed,{question:`${terms.slice(0,N-1).map(show).join(', ')}, (?)\n다음 규칙 범위에서 빈칸을 구하세요: ${rule}`,answer:terms[N-1],unit:'',facts:{a,b,c,offset},sequence:terms,rule,formula,signal:name,shortcut:`${formula}. 앞부분의 모든 항에도 같은 관계가 성립하는지 확인합니다.`,steps:terms.map((value,j)=>({label:`${j+1}번째 항`,expression:expressions[j],value}))});
  }};

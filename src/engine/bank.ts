@@ -4,16 +4,19 @@ import { validate } from './verify';
 import { rng } from './math';
 import type { Area, Attempt, Difficulty, Question, Template } from './types';
 export const templates=[...creativeTemplates,...sequenceTemplates];
+// Retain all generators to verify historical records; only these enter new practice sets.
+const basicOnly=new Set(['seq-9','seq-13','seq-15','seq-17','seq-19','seq-20','speed-4','speed-5','speed-8','speed-9','speed-14']);
+export const practiceTemplates=templates.filter(t=>t.difficulty!=='easy'&&!basicOnly.has(t.id));
 export const templateById=(id:string)=>templates.find(t=>t.id===id);
 export function generateVerified(template:Template,seed:number):Question {const q=template.generate(seed);const errors=validate(q);if(errors.length)throw new Error(`${q.id}: ${errors.join(', ')}`);return q;}
 export interface Options { area:Area; seed?:number; count?:number; difficulty?:Difficulty|'balanced'; subtypes?:string[]; strategy?:'random'|'weak'|'speed'; attempts?:Attempt[]; recent?:string[] }
 export function makeSet(o:Options):Question[] {
  const seed=o.seed??Date.now()>>>0,r=rng(seed),count=o.count??20;
- let pool=templates.filter(t=>t.area===o.area&&(!o.subtypes?.length||o.subtypes.includes(t.id)));
+ let pool=practiceTemplates.filter(t=>t.area===o.area&&(!o.subtypes?.length||o.subtypes.includes(t.id)));
  if(o.difficulty&&o.difficulty!=='balanced')pool=pool.filter(t=>t.difficulty===o.difficulty);
  if(!pool.length)throw new Error('조건에 맞는 검증된 유형이 없습니다.');
  const used=new Map<string,number>(),categories=new Map<string,number>(),out:Question[]=[],fingerprints=new Set(o.recent||[]);
- const targets:Difficulty[]=Array.from({length:count},(_,i)=>i<count*.25?'easy':i<count*.75?'medium':'hard');
+ const targets:Difficulty[]=Array.from({length:count},(_,i)=>i<count*.6?'medium':'hard');
  for(let n=targets.length-1;n>0;n--){const k=r(0,n);[targets[n],targets[k]]=[targets[k],targets[n]];}
  for(let n=0;n<count;n++){
   let available=pool;

@@ -37,3 +37,28 @@ test('개발 전용 검토실·초안 검증·승인·삭제',async({page})=>{
  test.skip(!!process.env.SKCT_STATIC_TEST,'개발 환경 전용 컴포넌트는 프로덕션 빌드에 없습니다.');
  await page.getByRole('button',{name:'개발자 검토실',exact:true}).click();await page.getByLabel('문제',{exact:true}).fill('0에 1을 더하면 얼마인가?');for(let i=0;i<5;i++)await page.getByRole('textbox',{name:`${i+1}번 선지`}).fill(String(i+1));await page.getByLabel('정답 계산식').fill('0+1');await page.getByLabel('해설',{exact:true}).fill('0+1=1이므로 정답은 1이다.');await page.getByRole('button',{name:'자동 수식 검사'}).click();await expect(page.getByText('수식과 선지 검사 통과.',{exact:false})).toBeVisible();await page.getByLabel('문장 조건·유일성·해설을 직접 검토했습니다.').check();await page.getByRole('button',{name:'검토 승인',exact:true}).click();await page.getByRole('button',{name:'초안 저장',exact:true}).click();const drafts=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).drafts,key);expect(drafts[0].status).toBe('approved');await page.getByRole('button',{name:'삭제',exact:true}).click();await expect(page.getByText('0에 1을 더하면 얼마인가? · approved')).not.toBeVisible();
 });
+
+test('보기 클릭으로 시작·일시정지 후 선택 재개·풀이 전 유형 힌트 없음',async({page})=>{
+ await expect(page.getByRole('radio').first()).toBeEnabled();
+ await page.getByRole('radio').nth(1).click();
+ await expect(page.getByRole('radio').nth(1)).toHaveAttribute('aria-checked','true');
+ await expect(page.getByRole('button',{name:'일시정지',exact:false})).toBeVisible();
+ await page.getByRole('button',{name:'일시정지',exact:false}).click();
+ await page.getByRole('radio').nth(2).click();
+ await expect(page.getByRole('radio').nth(2)).toHaveAttribute('aria-checked','true');
+ await expect(page.getByRole('button',{name:'정답 제출',exact:false})).toBeEnabled();
+ await page.getByRole('button',{name:'유형별 집중 훈련',exact:true}).click();
+ await page.getByRole('combobox',{name:'시험 영역',exact:true}).selectOption('sequence');
+ await page.getByRole('button',{name:'분자·분모 독립 규칙',exact:false}).click();
+ await page.getByRole('button',{name:'새 문제 20개 시작',exact:false}).click();
+ await page.getByRole('button',{name:'마치고 새로 시작',exact:true}).click();
+ await expect(page.locator('.question-meta')).not.toContainText('분자');
+ await expect(page.locator('.question-meta')).not.toContainText('Hard');
+ await expect(page.locator('.question-text')).not.toContainText('규칙');
+ await expect(page.locator('.question-text')).not.toContainText('등차');
+ const correct=await page.evaluate(()=>JSON.parse(localStorage.getItem('skct-lab:v1')!).session.questions[0].correctAnswer);
+ await page.getByRole('radio').nth((correct+1)%5).click();
+ await page.getByRole('button',{name:'정답 제출',exact:false}).click();
+ await expect(page.locator('.explanation')).toContainText('분자·분모 독립 규칙');
+ await expect(page.locator('.explanation')).toContainText('규칙 ·');
+});
