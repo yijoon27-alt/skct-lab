@@ -117,7 +117,7 @@ test('수리·수열 문제 이동·번호 이동·자동 다음에서 계산기
 
 test('최신 유형 출제 구성·도형 보기·풀이·모바일·백업 복원',async({page})=>{
  await page.getByRole('button',{name:'수열추리',exact:false}).first().click();
- await page.getByRole('button',{name:'마치고 새로 시작',exact:true}).click();
+ const replacement=page.getByRole('button',{name:'마치고 새로 시작',exact:true});if(await replacement.isVisible())await replacement.click();
  const snapshot=await page.evaluate(()=>JSON.parse(localStorage.getItem('skct-lab:v1')!));
  expect(snapshot.session.questions.filter((q:any)=>q.subtype.startsWith('refseq-'))).toHaveLength(13);
  const diagramIndex=snapshot.session.questions.findIndex((q:any)=>q.diagram);
@@ -132,7 +132,7 @@ test('최신 유형 출제 구성·도형 보기·풀이·모바일·백업 복�
  await page.setViewportSize({width:390,height:844});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:'docs/reference-mobile.png',fullPage:true});
- await page.setViewportSize({width:1440,height:1100});await page.screenshot({path:'docs/reference-desktop.png',fullPage:true});
+ await page.setViewportSize({width:1440,height:1100});await page.evaluate(()=>window.scrollTo(0,0));await page.waitForTimeout(300);await page.screenshot({path:'docs/reference-desktop.png',fullPage:false});
 });
 
 test('새 유형 문제은행·조건부 확률·두 도형 형식·집중훈련 20개',async({page})=>{
@@ -142,6 +142,7 @@ test('새 유형 문제은행·조건부 확률·두 도형 형식·집중훈련
   await page.getByRole('textbox',{name:'문제 유형 검색'}).fill(search);
   await page.getByRole('button',{name:'문제 보기',exact:true}).click();
   if(area==='sequence')await expect(page.getByRole('dialog').locator('.question-diagram,.cross-diagrams')).toBeVisible();
+  if(search==='격자 · 행 관계')await page.screenshot({path:'docs/reference-grid.png',fullPage:false});
   await page.getByRole('button',{name:'대화상자 닫기'}).click();
   await page.getByRole('button',{name:'연습',exact:true}).click();
   const replace=page.getByRole('button',{name:'마치고 새로 시작',exact:true});if(await replace.isVisible())await replace.click();
