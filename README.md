@@ -2,6 +2,14 @@
 
 SKCT 창의수리·수열추리 개인용 CBT 학습 사이트. React + TypeScript + Vite + Tailwind CSS + Vitest. 제공 자료의 유형과 풀이 전략을 참고하여 직접 작성한 **기출형 모사 문항**이며 실제 기출 원문·공식 SKCT 서비스가 아닙니다.
 
+## 온라인 접속
+
+- 학습 사이트: https://yijoon27-alt.github.io/skct-lab/
+- GitHub 저장소: https://github.com/yijoon27-alt/skct-lab
+- 자동 검사·배포: https://github.com/yijoon27-alt/skct-lab/actions
+
+Pages는 아래 자동 검사를 통과한 커밋만 배포합니다. 브라우저별 학습 기록은 JSON 백업으로 이동할 수 있습니다.
+
 ## 설치와 실행
 
 Node.js 22.12 이상 또는 24 LTS를 사용합니다. 이 README가 있는 iCloud `SKCT/SKCT LAB` 폴더에서 터미널을 엽니다.
@@ -83,7 +91,7 @@ GitHub Pages는 코드를 공개합니다. 관리자 컴포넌트는 개발 모�
 
 [Vite 배포 가이드](https://vite.dev/guide/static-deploy.html), [GitHub Pages Actions 가이드](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)를 참고했습니다.
 
-Vercel을 사용하려면 Framework `Vite`, Build `npm run check`, Output `dist`, base `/`를 사용하세요. GitHub 저장소 보호 검사도 유지합니다. 실제 공개 배포와 저장소 생성은 아직 하지 않았습니다.
+Vercel을 사용하려면 Framework `Vite`, Build `npm run check`, Output `dist`, base `/`를 사용하세요. GitHub 저장소 보호 검사도 유지합니다. GitHub 저장소 업로드와 Pages 설정을 완료했습니다. 실제 배포 결과는 저장소 Actions에서 확인할 수 있습니다.
 
 ## 관리자와 향후 확장
 
