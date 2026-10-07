@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.DS_Store
+.env*
+playwright-report/
+test-results/
+*.pdf
+
+*.tsbuildinfo
+skct-backup*.json
+skct-before-restore*.json
+skct-records*.csv
+skct-wrong-notes*.json

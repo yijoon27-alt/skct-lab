@@ -1,0 +1,39 @@
+import { test,expect } from './fixture';
+const key='skct-lab:v1';
+test.beforeEach(async({page})=>{await page.goto('/');});
+test('학습·메모·계산기·오답·기록 복원',async({page})=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.getByRole('button',{name:'시작',exact:true}).click();await page.getByRole('textbox',{name:'문제별 메모장'}).fill('선두거리 ÷ 속력차');
+ await page.getByRole('textbox',{name:'계산식'}).fill('(1+2)*3.5');await page.getByRole('textbox',{name:'계산식'}).press('Enter');await expect(page.getByLabel('계산 결과')).toHaveText('10.5');
+ const answer=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).session.questions[0].correctAnswer,key);await page.getByRole('radio').nth((answer+1)%5).click();await page.getByRole('button',{name:/정답 제출/}).click();await expect(page.getByText('오답 · 풀이를 확인해보세요',{exact:false})).toBeVisible();
+ await page.reload();await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toHaveValue('선두거리 ÷ 속력차');await expect(page.getByText('오답 · 풀이를 확인해보세요',{exact:false})).toBeVisible();
+ await page.getByRole('button',{name:'오답노트',exact:false}).first().click();await expect(page.getByRole('button',{name:'이 문제 다시 풀기'})).toBeVisible();expect(errors).toEqual([]);
+});
+test('실전 잠금·이전 이동 금지·종료 후 해설',async({page})=>{
+ await page.getByRole('button',{name:'SKCT LAB',exact:false}).click();await page.getByRole('button',{name:'실전 시작'}).first().click();await page.getByRole('button',{name:'시작',exact:true}).click();await page.getByRole('radio').nth(0).click();await page.getByRole('button',{name:/정답 제출/}).click();
+ await expect(page.getByText('답안이 잠겼습니다.',{exact:false})).toBeVisible();await expect(page.getByText('SKCT 최단풀이',{exact:true})).not.toBeVisible();await expect(page.getByRole('radio').nth(1)).toBeDisabled();await page.getByRole('button',{name:'다음 문제',exact:false}).click();await expect(page.getByRole('button',{name:'이전',exact:false}).first()).toBeDisabled();await page.getByRole('button',{name:'제출하기',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'제출하기',exact:true}).click();await expect(page.getByText('SESSION COMPLETE')).toBeVisible();await expect(page.getByText('SKCT 최단풀이',{exact:true})).toBeVisible();
+});
+test('단축키·입력 격리·자동 다음',async({page})=>{
+ await page.getByRole('button',{name:'시작',exact:true}).click();await page.keyboard.press('m');await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toBeFocused();await page.keyboard.type('12345');await expect(page.getByRole('radio').first()).toHaveAttribute('aria-checked','false');await page.getByRole('heading',{level:1}).click();const answer=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).session.questions[0].correctAnswer,key);await page.getByLabel('정답이면 자동 다음').check();await page.getByRole('heading',{level:1}).click();await page.keyboard.press(String(answer+1));await page.keyboard.press('Enter');await expect(page.locator('.question-count')).toHaveText('02 / 20');
+});
+test('모바일·다크모드·계산오류·넘침',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'다크 모드',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','dark');await page.getByRole('textbox',{name:'문제별 메모장'}).scrollIntoViewIfNeeded();await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toBeVisible();await page.getByRole('textbox',{name:'계산식'}).fill('1/0');await page.getByRole('textbox',{name:'계산식'}).press('Enter');await expect(page.getByLabel('계산 결과')).toContainText('0으로');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'docs/mobile.png',fullPage:true});
+});
+test('실전 만료·새로고침 자동 제출',async({page})=>{
+ await page.getByRole('button',{name:'SKCT LAB',exact:false}).click();await page.getByRole('button',{name:'실전 시작'}).last().click();await page.getByRole('button',{name:'시작',exact:true}).click();await page.evaluate(key=>{const x=JSON.parse(localStorage.getItem(key)!);x.session.deadline=Date.now()-1000;localStorage.setItem(key,JSON.stringify(x));},key);await page.reload();await expect(page.getByText('SESSION COMPLETE')).toBeVisible();
+});
+test('백업·가져오기·통계',async({page})=>{
+ const promise=page.waitForEvent('download');await page.getByRole('button',{name:'JSON 백업'}).click();const dl=await promise;await dl.saveAs('test-results/backup.json');await page.locator('input[type=file]').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{"version":7}')});await expect(page.locator('.toast')).toContainText('지원하지 않는');await page.locator('input[type=file]').setInputFiles('test-results/backup.json');await page.getByRole('button',{name:'현재 백업 후 복원'}).click();await expect(page.locator('.toast')).toContainText('복원');await page.getByRole('button',{name:'나의 학습 통계'}).click();await expect(page.getByRole('heading',{name:'유형별 정답률'})).toBeVisible();
+});
+test('데스크톱·신고·문제은행',async({page})=>{
+ await page.setViewportSize({width:1440,height:1100});await page.getByRole('button',{name:'시작',exact:true}).click();await page.getByRole('button',{name:'문제 신고',exact:true}).click();await page.getByPlaceholder('어떤 조건이나 풀이가 잘못되었는지 남겨주세요.').fill('검토 요청');await page.getByRole('button',{name:'신고 저장'}).click();const reports=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).reports,key);expect(reports[0].question.seed).toBeGreaterThan(0);expect(reports[0].question.generatorVersion).toBe('1.0.0');const correct=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).session.questions[0].correctAnswer,key);await page.getByRole('radio').nth((correct+1)%5).click();await page.getByRole('button',{name:/정답 제출/}).click();await page.screenshot({path:'docs/desktop.png',fullPage:true});await page.getByRole('button',{name:'문제은행',exact:true}).click();await page.getByRole('textbox',{name:'문제 유형 검색'}).fill('선출발');await expect(page.getByRole('button',{name:'문제 보기',exact:true})).toHaveCount(1);
+});
+test('집중훈련·20문항 이동·분수·모바일 도구 접근',async({page})=>{
+ await page.getByRole('button',{name:'유형별 집중 훈련',exact:true}).click();await page.getByRole('combobox',{name:'시험 영역',exact:true}).selectOption('sequence');await page.getByRole('button',{name:'분자·분모 독립 규칙',exact:false}).click();await page.getByRole('button',{name:'새 문제 20개 시작',exact:false}).click();await page.getByRole('button',{name:'시작',exact:true}).click();
+ for(let i=0;i<20;i++){await page.getByRole('button',{name:`${i+1}번 문제`,exact:true}).click();await expect(page.locator('.question-count')).toHaveText(`${String(i+1).padStart(2,'0')} / 20`);await expect(page.getByRole('radio')).toHaveCount(5);}
+ await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'메모장',exact:true}).click();await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toBeFocused();await page.getByRole('button',{name:'계산기',exact:true}).click();await expect(page.getByRole('textbox',{name:'계산식'})).toBeFocused();
+});
+test('개발 전용 검토실·초안 검증·승인·삭제',async({page})=>{
+ test.skip(!!process.env.SKCT_STATIC_TEST,'개발 환경 전용 컴포넌트는 프로덕션 빌드에 없습니다.');
+ await page.getByRole('button',{name:'개발자 검토실',exact:true}).click();await page.getByLabel('문제',{exact:true}).fill('0에 1을 더하면 얼마인가?');for(let i=0;i<5;i++)await page.getByRole('textbox',{name:`${i+1}번 선지`}).fill(String(i+1));await page.getByLabel('정답 계산식').fill('0+1');await page.getByLabel('해설',{exact:true}).fill('0+1=1이므로 정답은 1이다.');await page.getByRole('button',{name:'자동 수식 검사'}).click();await expect(page.getByText('수식과 선지 검사 통과.',{exact:false})).toBeVisible();await page.getByLabel('문장 조건·유일성·해설을 직접 검토했습니다.').check();await page.getByRole('button',{name:'검토 승인',exact:true}).click();await page.getByRole('button',{name:'초안 저장',exact:true}).click();const drafts=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).drafts,key);expect(drafts[0].status).toBe('approved');await page.getByRole('button',{name:'삭제',exact:true}).click();await expect(page.getByText('0에 1을 더하면 얼마인가? · approved')).not.toBeVisible();
+});
