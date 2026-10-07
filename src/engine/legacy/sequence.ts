@@ -1,13 +1,13 @@
 import { build } from './build';
-import { rng, primes, format } from './math';
-import type { Difficulty, Template } from './types';
+import { rng, primes, format } from '../math';
+import type { Difficulty, Template } from '../types';
 const names=['등차수열','등비수열','공차가 변하는 수열','계차수열','이중 계차수열','곱셈 후 덧셈','곱셈 후 뺄셈','교대 연산','홀수항·짝수항 분리','피보나치','피보나치 변형','삼각수','제곱수','세제곱수','소수 나열','분수수열','분자·분모 독립 규칙','역수수열','소수점 수열','음수 교대','부호 반복','군수열','여러 단계 연산','두 규칙 교차','복합 수열'];
 export const sequenceTemplates:Template[]=names.map((name,i)=>{
  const difficulty:Difficulty=[0,1,11,12,14,18].includes(i)?'easy':[4,16,22,23,24].includes(i)?'hard':'medium';
  return {id:`seq-${i}`,name,category:name,area:'sequence',difficulty,complexity:difficulty==='easy'?'하나의 일정한 차·비율':difficulty==='hard'?'두 규칙 결합 또는 2차 이상 계차':'계차 또는 두 항 분리',generate:(seed:number)=>{
-  const r=rng(seed),offset=r(0,8), terms:number[]=[],expressions:string[]=[];let a=r(2,9),b=r(2,3);
-  let c=r(1,5);if([1,5,6,22,24].includes(i)&&b===3){a=r(2,4);c=r(1,3);}if(i===16&&a*c===b*(a+b))c=c===8?1:c+1;if(i===6&&a*b-c===a)c=1;
-  let rule='',formula='';const N=[2,3,4,21].includes(i)?12:9;
+  const r=rng(seed),a=r(2,14),b=r(2,5),offset=r(0,90), terms:number[]=[],expressions:string[]=[];
+  let c=r(1,8);if(i===16&&a*c===b*(a+b))c=c===8?1:c+1;if(i===6&&a*b-c===a)c=1;
+  let rule='',formula='';const N=7;
   for(let j=0;j<N;j++) {
    let x=0,e='';
    switch(i){
@@ -37,18 +37,8 @@ export const sequenceTemplates:Template[]=names.map((name,i)=>{
    }
    terms.push(x);expressions.push(e);
   }
-  // Ask for an interior term, two missing terms, or a distant term; no rule hints in the prompt.
+  // Preserve the rule-family in canonical snapshots; the solve view hides it until feedback.
   const show=(v:number)=>i===18?Number(v.toFixed(1)).toFixed(1):format(v);
-  const nth=[2,3,4].includes(i);
-  const kind=nth?3:[8,21,23].includes(i)?r(1,2):r(0,2);
-  const indexA=nth?r(8,11):kind===0?r(3,5):3;
-  const indexB=kind===0||kind===3?indexA:7;
-  const displayed=nth?terms.slice(0,6).map(show):terms.map((v,j)=>j===indexA?'(A)':kind!==0&&j===indexB?'(B)':show(v));
-  const instruction=kind===0?'빈칸 (A)에 들어갈 수를 구하세요.':kind===1?'(A)+(B)의 값을 구하세요.':kind===2?'(B)−(A)의 값을 구하세요.':`${indexA+1}번째 항을 구하세요.`;
-  const answer=kind===1?terms[indexA]+terms[indexB]:kind===2?terms[indexB]-terms[indexA]:terms[indexA];
-  const queryExpression=kind===1?`(${terms[indexA]})+(${terms[indexB]})`:kind===2?`(${terms[indexB]})-(${terms[indexA]})`:String(answer);
-  const steps=terms.map((value,j)=>({label:`${j+1}번째 항`,expression:expressions[j],value}));
-  steps.push({label:instruction,expression:queryExpression,value:answer});
-  return build(`seq-${i}`,name,'sequence',difficulty,seed,{question:`${displayed.join(', ')}${nth?', …':''}\n${instruction}`,answer,unit:'',facts:{a,b,c,offset,queryKind:kind,indexA,indexB},sequence:terms,rule,formula,signal:name,shortcut:`${formula}. ${kind===1?'A와 B를 각각 구해 더합니다.':kind===2?'B에서 A를 뺍니다.':nth?'규칙을 일반항이나 계차 합으로 바꾸어 목표 항을 바로 구합니다.':'빈칸 전후의 항에 같은 관계가 성립하는지 확인합니다.'}`,steps,memo:kind===1?`(${expressions[indexA]})+(${expressions[indexB]})`:kind===2?`(${expressions[indexB]})-(${expressions[indexA]})`:expressions[indexA]});
+  return build(`seq-${i}`,name,'sequence',difficulty,seed,{question:`${terms.slice(0,N-1).map(show).join(', ')}, (?)\n다음 규칙 범위에서 빈칸을 구하세요: ${rule}`,answer:terms[N-1],unit:'',facts:{a,b,c,offset},sequence:terms,rule,formula,signal:name,shortcut:`${formula}. 앞부분의 모든 항에도 같은 관계가 성립하는지 확인합니다.`,steps:terms.map((value,j)=>({label:`${j+1}번째 항`,expression:expressions[j],value}))});
  }};
 });

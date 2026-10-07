@@ -26,7 +26,7 @@ test('백업·가져오기·통계',async({page})=>{
  const promise=page.waitForEvent('download');await page.getByRole('button',{name:'JSON 백업'}).click();const dl=await promise;await dl.saveAs('test-results/backup.json');await page.locator('input[type=file]').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{"version":7}')});await expect(page.locator('.toast')).toContainText('지원하지 않는');await page.locator('input[type=file]').setInputFiles('test-results/backup.json');await page.getByRole('button',{name:'현재 백업 후 복원'}).click();await expect(page.locator('.toast')).toContainText('복원');await page.getByRole('button',{name:'나의 학습 통계'}).click();await expect(page.getByRole('heading',{name:'유형별 정답률'})).toBeVisible();
 });
 test('데스크톱·신고·문제은행',async({page})=>{
- await page.setViewportSize({width:1440,height:1100});await page.getByRole('button',{name:'시작',exact:true}).click();await page.getByRole('button',{name:'문제 신고',exact:true}).click();await page.getByPlaceholder('어떤 조건이나 풀이가 잘못되었는지 남겨주세요.').fill('검토 요청');await page.getByRole('button',{name:'신고 저장'}).click();const reports=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).reports,key);expect(reports[0].question.seed).toBeGreaterThan(0);expect(reports[0].question.generatorVersion).toBe('1.0.0');const correct=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).session.questions[0].correctAnswer,key);await page.getByRole('radio').nth((correct+1)%5).click();await page.getByRole('button',{name:/정답 제출/}).click();await page.screenshot({path:'docs/desktop.png',fullPage:true});await page.getByRole('button',{name:'문제은행',exact:true}).click();await page.getByRole('textbox',{name:'문제 유형 검색'}).fill('선출발');await expect(page.getByRole('button',{name:'문제 보기',exact:true})).toHaveCount(1);
+ await page.setViewportSize({width:1440,height:1100});await page.getByRole('button',{name:'시작',exact:true}).click();await page.getByRole('button',{name:'문제 신고',exact:true}).click();await page.getByPlaceholder('어떤 조건이나 풀이가 잘못되었는지 남겨주세요.').fill('검토 요청');await page.getByRole('button',{name:'신고 저장'}).click();const reports=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).reports,key);expect(reports[0].question.seed).toBeGreaterThan(0);expect(reports[0].question.generatorVersion).toBe('1.1.0');const correct=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).session.questions[0].correctAnswer,key);await page.getByRole('radio').nth((correct+1)%5).click();await page.getByRole('button',{name:/정답 제출/}).click();await page.screenshot({path:'docs/desktop.png',fullPage:true});await page.getByRole('button',{name:'문제은행',exact:true}).click();await page.getByRole('textbox',{name:'문제 유형 검색'}).fill('선출발');await expect(page.getByRole('button',{name:'문제 보기',exact:true})).toHaveCount(1);
 });
 test('집중훈련·20문항 이동·분수·모바일 도구 접근',async({page})=>{
  await page.getByRole('button',{name:'유형별 집중 훈련',exact:true}).click();await page.getByRole('combobox',{name:'시험 영역',exact:true}).selectOption('sequence');await page.getByRole('button',{name:'분자·분모 독립 규칙',exact:false}).click();await page.getByRole('button',{name:'새 문제 20개 시작',exact:false}).click();await page.getByRole('button',{name:'시작',exact:true}).click();
@@ -61,4 +61,56 @@ test('보기 클릭으로 시작·일시정지 후 선택 재개·풀이 전 유
  await page.getByRole('button',{name:'정답 제출',exact:false}).click();
  await expect(page.locator('.explanation')).toContainText('분자·분모 독립 규칙');
  await expect(page.locator('.explanation')).toContainText('규칙 ·');
+});
+
+test('답을 고르지 않고 풀이 즉시 보기·메모 식 사용·보조 학습 통계 분리',async({page})=>{
+ await page.getByLabel('정답이면 자동 다음').uncheck();
+ await page.getByRole('button',{name:'풀이 보기',exact:true}).click();
+ await expect(page.locator('.explanation')).toBeVisible();
+ await expect(page.getByText('풀이 열람 · 정답률 집계에서 제외')).toBeVisible();
+ let snapshot=await page.evaluate(()=>JSON.parse(localStorage.getItem('skct-lab:v1')!));
+ expect(snapshot.attempts).toHaveLength(0);
+ expect(snapshot.session.answers).toEqual({});
+ const q=snapshot.session.questions[0];
+ await page.getByRole('button',{name:'다음 문제',exact:false}).click();await expect(page.locator('.question-count')).toHaveText('02 / 20');await page.getByRole('button',{name:'1번 문제',exact:true}).click();await expect(page.locator('.explanation')).toBeVisible();
+ await page.getByRole('button',{name:'이 식을 메모장에 넣기',exact:true}).click();
+ await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toHaveValue(q.memo);
+ await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toBeFocused();
+ await page.getByRole('radio').nth(q.correctAnswer).click();
+ await page.getByRole('button',{name:'정답 제출',exact:false}).click();
+ snapshot=await page.evaluate(()=>JSON.parse(localStorage.getItem('skct-lab:v1')!));
+ expect(snapshot.attempts[0].assisted).toBe(true);
+ await page.reload();await expect(page.locator('.explanation')).toBeVisible();
+ await page.getByRole('button',{name:'나의 학습 통계',exact:true}).click();
+ await expect(page.getByText('풀이를 본 뒤 답한 1개 문항은 정답률에서 제외합니다.',{exact:false})).toBeVisible();
+ await page.getByRole('button',{name:'SKCT LAB',exact:false}).click();
+ await page.getByRole('button',{name:'실전 시작'}).first().click();
+ await page.getByRole('button',{name:'마치고 새로 시작',exact:true}).click();
+ await expect(page.getByRole('button',{name:'풀이 보기',exact:true})).toHaveCount(0);
+});
+
+test('수리·수열 문제 이동·번호 이동·자동 다음에서 계산기 초기화와 메모 보존',async({page})=>{
+ await page.getByRole('textbox',{name:'문제별 메모장'}).fill('1번 문제 개인 메모');
+ await page.getByRole('textbox',{name:'계산식'}).fill('12*3');await page.getByRole('textbox',{name:'계산식'}).press('Enter');await expect(page.getByLabel('계산 결과')).toHaveText('36');
+ await page.getByRole('button',{name:'시작',exact:true}).click();
+ await page.getByRole('button',{name:'건너뛰기',exact:false}).click();
+ await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('');await expect(page.getByLabel('계산 결과')).toHaveText('0');
+ await page.getByRole('textbox',{name:'계산식'}).fill('1/0');await page.getByRole('textbox',{name:'계산식'}).press('Enter');await expect(page.getByLabel('계산 결과')).toContainText('0으로');
+ await page.getByRole('button',{name:'1번 문제',exact:true}).click();await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('');await expect(page.getByLabel('계산 결과')).toHaveText('0');await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toHaveValue('1번 문제 개인 메모');
+ await page.getByRole('button',{name:'수열추리',exact:false}).first().click();await page.getByRole('button',{name:'마치고 새로 시작',exact:true}).click();
+ await page.getByRole('textbox',{name:'계산식'}).fill('3+7');await page.getByRole('textbox',{name:'계산식'}).press('Enter');
+ const correct=await page.evaluate(()=>JSON.parse(localStorage.getItem('skct-lab:v1')!).session.questions[0].correctAnswer);
+ await page.getByRole('radio').nth(correct).click();await page.getByRole('button',{name:'정답 제출',exact:false}).click();
+ await expect(page.locator('.question-count')).toHaveText('02 / 20');await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('');await expect(page.getByLabel('계산 결과')).toHaveText('0');
+});
+
+ test('무제한 연습 두 영역에서 미답 풀이 바로 보기',async({page})=>{
+ for(const area of ['creative','sequence']){
+  await page.getByRole('button',{name:'무제한 연습',exact:true}).click();
+  await page.locator('.training-settings select').first().selectOption(area);
+  await page.getByRole('button',{name:'새 문제 20개 시작',exact:false}).click();
+  await page.getByRole('button',{name:'풀이 보기',exact:true}).click();
+  await expect(page.locator('.explanation')).toBeVisible();
+  await expect(page.getByRole('button',{name:'이 식을 메모장에 넣기',exact:true})).toBeVisible();
+ }
 });

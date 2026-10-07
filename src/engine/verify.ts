@@ -1,4 +1,5 @@
 import { calculate, close, format } from './math';
+import { calibrationErrors } from './calibration';
 import type { Question } from './types';
 // No generator imports. Validate conditions against the proposed answer, not its construction formula.
 function combinations(n:number,k:number):number[][] {
@@ -77,10 +78,11 @@ export function verifyAnswer(q:Question):boolean {
    case 15:return x===paths(a,b);case 16:return x===paths(f.x,f.y)*paths(a-f.x,b-f.y);
   }
  }else if(id==='seq'){
-  const s=q.sequence;if(!s||s.length!==7||!eq(s[6],x))return false;
+  const s=q.sequence;if(!s)return false;
+  if(q.generatorVersion==='1.0.0'){if(s.length!==7||!eq(s[6],x))return false;}else{const {queryKind:k,indexA:A,indexB:B}=f;if(s.length<8||s.length>12||![0,1,2,3].includes(k)||!Number.isInteger(A)||!Number.isInteger(B)||A<0||B<0||A>=s.length||B>=s.length)return false;const expected=k===1?s[A]+s[B]:k===2?s[B]-s[A]:s[A];if(!eq(x,expected))return false;}
   const {a,b,c,offset}=f;
   const delta=s.slice(1).map((v,j)=>v-s[j]);
-  const test=(fn:(j:number)=>boolean,start=0)=>Array.from({length:7-start},(_,j)=>j+start).every(fn);
+  const test=(fn:(j:number)=>boolean,start=0)=>Array.from({length:s.length-start},(_,j)=>j+start).every(fn);
   switch(i){case 0:return delta.every(v=>eq(v,b));case 1:return test(j=>eq(s[j]/s[j-1],b),1);
    case 2:return eq(delta[0],b)&&delta.slice(1).every((v,j)=>eq(v-delta[j],c));
    case 3:return delta.every((v,j)=>eq(v,b*(j+1)));
@@ -91,12 +93,12 @@ export function verifyAnswer(q:Question):boolean {
    case 9:case 10:return test(j=>eq(s[j]-s[j-1]-s[j-2],i===9?0:c),2);
    case 11:return test(j=>{let sum=0;for(let k=1;k<=j+c;k++)sum+=k;return eq(s[j],sum*b);});
    case 12:return test(j=>eq(Math.sqrt(s[j]-a),j+c));case 13:return test(j=>eq(Math.cbrt(s[j]-a),j+c));
-   case 14:{const primes:number[]=[];for(let v=2;primes.length<offset+7;v++){let prime=true;for(let d=2;d*d<=v;d++)if(v%d===0)prime=false;if(prime)primes.push(v);}return test(j=>s[j]===primes[j+offset]);}
+   case 14:{const primes:number[]=[];for(let v=2;primes.length<offset+s.length;v++){let prime=true;for(let d=2;d*d<=v;d++)if(v%d===0)prime=false;if(prime)primes.push(v);}return test(j=>s[j]===primes[j+offset]);}
    case 15:return test(j=>eq(s[j]*c*11,a+j*b));case 16:return test(j=>eq(s[j]*(a+b+j*c),a+j*b));
    case 17:return test(j=>eq(1/s[j]-1/s[j-1],b),1);case 18:return delta.every(v=>eq(v*10,b));
    case 19:return test(j=>eq(Math.abs(s[j])-Math.abs(s[j-1]),b)&&Math.sign(s[j])===(j%2?-1:1),1);
    case 20:return test(j=>Math.sign(s[j])===([1,1,-1][j%3])&&eq(Math.abs(s[j]),a+j*b));
-   case 21:return eq(s[2],s[0]+s[1])&&eq(s[5],s[3]+s[4])&&eq(s[3]-s[0],b)&&eq(s[4]-s[1],b)&&eq(s[6]-s[3],b);
+   case 21:return test(j=>j%3===2?eq(s[j],s[j-2]+s[j-1]):j<3?true:eq(s[j]-s[j-3],b));
    case 22:return test(j=>eq(s[j]-s[j-1]*b,j%2?c:-c),1);
    case 23:return test(j=>j%2?eq(s[j]-s[j-2],c):eq(s[j]/s[j-2],b),2);
    case 24:return test(j=>eq((s[j]-s[j-1]*b)/j,c),1);
@@ -110,8 +112,8 @@ export function verifyExplanation(q:Question):boolean {
 export function validate(q:Question):string[] {
  const errors:string[]=[];
  if(!q||typeof q.question!=='string'||!q.question.trim()||q.question.length>6000)return ['문항 구조 오류'];
- if(!Number.isInteger(q.seed)||q.seed<0||q.seed>4294967295||q.generatorVersion!=='1.0.0')errors.push('시드·버전 오류');
- if(q.id!==`${q.subtype}-v1-${q.seed}`)errors.push('문항 식별자 오류');
+ if(!Number.isInteger(q.seed)||q.seed<0||q.seed>4294967295||!['1.0.0','1.1.0'].includes(q.generatorVersion))errors.push('시드·버전 오류');
+ if(q.id!==`${q.subtype}-${q.generatorVersion==='1.0.0'?'v1':'v2'}-${q.seed}`)errors.push('문항 식별자 오류');
  if(!Number.isFinite(q.answer))errors.push('유한하지 않은 정답');
  if(q.options?.length!==5||q.optionValues?.length!==5||!Number.isInteger(q.correctAnswer)||q.correctAnswer<0||q.correctAnswer>4)errors.push('선지 구조 오류');
  else {
@@ -125,5 +127,5 @@ export function validate(q:Question):string[] {
  if(['명','개','가지','그루'].includes(q.unit)&&(!Number.isInteger(q.answer)||q.answer<0))errors.push('정수 조건 오류');
  try{if(!verifyAnswer(q))errors.push('독립 조건 검산 실패');}catch{errors.push('검산 예외');}
  if(!verifyExplanation(q))errors.push('해설 계산 오류');
- return errors;
+ return [...errors,...calibrationErrors(q)];
 }

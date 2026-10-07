@@ -1,5 +1,7 @@
 import { creativeTemplates } from './creative';
 import { sequenceTemplates } from './sequence';
+import { creativeTemplates as legacyCreative } from './legacy/creative';
+import { sequenceTemplates as legacySequence } from './legacy/sequence';
 import { validate } from './verify';
 import { rng } from './math';
 import type { Area, Attempt, Difficulty, Question, Template } from './types';
@@ -7,6 +9,8 @@ export const templates=[...creativeTemplates,...sequenceTemplates];
 // Retain all generators to verify historical records; only these enter new practice sets.
 const basicOnly=new Set(['seq-9','seq-13','seq-15','seq-17','seq-19','seq-20','speed-4','speed-5','speed-8','speed-9','speed-14']);
 export const practiceTemplates=templates.filter(t=>t.difficulty!=='easy'&&!basicOnly.has(t.id));
+export const legacyTemplates=[...legacyCreative,...legacySequence];
+export function reproduce(q:Question):Question {const registry=q.generatorVersion==='1.0.0'?legacyTemplates:q.generatorVersion==='1.1.0'?templates:[];const t=registry.find(t=>t.id===q.subtype);if(!t)throw Error('지원하지 않는 생성기 버전');return t.generate(q.seed);}
 export const templateById=(id:string)=>templates.find(t=>t.id===id);
 export function generateVerified(template:Template,seed:number):Question {const q=template.generate(seed);const errors=validate(q);if(errors.length)throw new Error(`${q.id}: ${errors.join(', ')}`);return q;}
 export interface Options { area:Area; seed?:number; count?:number; difficulty?:Difficulty|'balanced'; subtypes?:string[]; strategy?:'random'|'weak'|'speed'; attempts?:Attempt[]; recent?:string[] }
@@ -24,7 +28,7 @@ export function makeSet(o:Options):Question[] {
   const unused=available.filter(t=>!used.has(t.id));if(unused.length)available=unused;
   if(!o.subtypes?.length&&o.area==='creative'){const balanced=available.filter(t=>(categories.get(t.category)||0)<4);if(balanced.length)available=balanced;}
   const scores=available.map(t=>{
-   const history=(o.attempts||[]).filter(a=>a.first&&a.question.subtype===t.id);
+   const history=(o.attempts||[]).filter(a=>a.first&&!a.assisted&&a.question.subtype===t.id);
    const weakness=history.length?history.filter(a=>!a.correct).length/history.length:0.5;
    const speed=history.length?history.filter(a=>a.correct&&a.seconds>45).length/history.length:0;
    const weight=o.strategy==='weak'?1+weakness*5:o.strategy==='speed'?1+speed*5:1;
