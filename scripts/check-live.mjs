@@ -1,4 +1,4 @@
-import {chromium} from '@playwright/test';
+import {chromium,expect} from '@playwright/test';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({channel:'chrome',headless:true});
 try {
@@ -14,8 +14,8 @@ try {
  await page.getByRole('textbox',{name:'계산식'}).press('Enter');
  assert.equal(await page.getByLabel('계산 결과').textContent(),'36');
  await page.getByRole('button',{name:'다음 문제',exact:false}).click();
- assert.equal(await page.getByRole('textbox',{name:'계산식'}).inputValue(),'');
- assert.equal(await page.getByLabel('계산 결과').textContent(),'0');
+ await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('');
+ await expect(page.getByLabel('계산 결과')).toHaveText('0');
  for(const area of ['creative','sequence']){
   await page.getByRole('button',{name:'무제한 연습',exact:true}).click();
   await page.locator('.training-settings select').first().selectOption(area);
