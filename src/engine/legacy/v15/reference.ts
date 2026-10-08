@@ -1,15 +1,15 @@
 // Independently authored rules inspired by the aggregate review, never source questions.
 import { build } from './build';
-import { calculate, format, rng } from './math';
-import { ro } from './korean';
-import type { Template, Step, Question } from './types';
+import { calculate, format, rng } from '../../math';
+import { ro } from '../../korean';
+import type { Template, Step, Question } from '../../types';
 
 const probabilityNames=['조건부 확률 · 생산 출처','조건부 확률 · 검사 결과','조건부 확률 · 집단 선택'];
 export const probabilityTemplates:Template[]=probabilityNames.map((name,i)=>({
  id:`bayes-${i}`,name,category:'경우의 수·확률',area:'creative',difficulty:i===1?'hard':'medium',
  complexity:i===1?'실제 상태와 검사 결과의 두 단계 비율':'관찰된 결과로 표본공간을 제한한 뒤 집단 비율 역산',
  generate(seed){
-  const r=rng(seed),share=i===1?r(1,4)*5:r(2,8)*10,rateA=i===1?r(14,19)*5:i===0?r(1,7)*2:r(1,7)*5,rateB=i===1?r(1,6)*5:i===0?r(1,7)*2:r(1,7)*5;
+  const r=rng(seed),share=i===1?r(1,4)*5:r(2,8)*10,rateA=i===1?r(14,19)*5:i===0?r(1,7)*2:r(1,7)*5,rateB=i===1?r(1,3)*5:i===0?r(1,7)*2:r(1,7)*5;
   const observedA=share*rateA,observedB=(100-share)*rateB,answer=observedA/(observedA+observedB);
   const question=i===0?`두 작업장 A, B가 전체 제품의 ${share}%, ${100-share}%를 각각 생산한다. A 제품의 불량률은 ${rateA}%, B 제품의 불량률은 ${rateB}%다. 전체 제품 중 하나를 무작위로 골랐더니 불량이었다. 이 제품이 A에서 생산되었을 확률은?`:
    i===1?`어떤 부품의 ${share}%에는 결함이 있다. 검사에서 결함이 있는 부품은 ${rateA}%가 양성으로, 결함이 없는 부품은 ${100-rateB}%가 음성으로 판정된다. 부품을 무작위로 하나 골라 검사했더니 양성이었다. 실제로 결함이 있을 확률은? (각 비율은 해당 집단 안의 비율이다.)`:

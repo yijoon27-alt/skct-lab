@@ -1,6 +1,6 @@
 import { describe,expect,it } from 'vitest';
 import { creativeTemplates } from '../src/engine/creative';
-import { templates,templateById,v12Templates,v13Templates,v14Templates,reproduce } from '../src/engine/bank';
+import { templates,templateById,v12Templates,v13Templates,v14Templates,v15Templates,reproduce } from '../src/engine/bank';
 import { creativeGuidance,guidanceErrors,applyGuidance } from '../src/engine/guidance';
 import { validate } from '../src/engine/verify';
 import { eul,particleErrors,ro,wa } from '../src/engine/korean';
@@ -101,6 +101,15 @@ it('1.4.0 생성기 138개를 그대로 보존해 과거 기록을 재현',()=>{
  for(const t of v14Templates)for(let seed=1;seed<=4;seed++){
   const q=t.generate(seed*179);
   expect(q.generatorVersion,q.id).toBe('1.4.0');
+  expect(validate(q),q.id).toEqual([]);
+  expect(reproduce(q)).toEqual(q);
+ }
+});
+it('1.5.0 생성기 138개를 그대로 보존해 과거 기록을 재현',()=>{
+ expect(v15Templates).toHaveLength(138);
+ for(const t of v15Templates)for(let seed=1;seed<=4;seed++){
+  const q=t.generate(seed*179);
+  expect(q.generatorVersion,q.id).toBe('1.5.0');
   expect(validate(q),q.id).toEqual([]);
   expect(reproduce(q)).toEqual(q);
  }

@@ -1,8 +1,8 @@
 import { build, type Body } from './build';
-import { calculate, choose, factorial, format, gcd, rng } from './math';
-import { creativeGuidance } from './guidance';
-import { eul, ro, wa } from './korean';
-import type { Difficulty, Template } from './types';
+import { calculate, choose, factorial, format, gcd, rng } from '../../math';
+import { creativeGuidance } from '../../guidance';
+import { eul, ro, wa } from '../../korean';
+import type { Difficulty, Template } from '../../types';
 const groups: [string,string,string[]][] = [
  ['speed','거리·속력·시간',['기본 이동','같은 거리 왕복','속력비·시간비','도착 시간차','마주 보는 이동','같은 방향 추월','선출발 후 추월','추월 후 왕복','원형 트랙 마주침','원형 트랙 추월','두 기차 통과','기차와 터널','기차와 다리','배의 상류·하류','영역 완전 통과','시간 단위 변환']],
  ['mix','농도·혼합',['서로 다른 용액 혼합','혼합 후 농도','목표 농도 혼합량','물 추가','물 증발','용액 일부 제거','제거 후 물 보충','혼합 후 증발','가중평균 농도','농도차 역비','연속 제거·보충']],
@@ -67,7 +67,7 @@ function generate(family:string,i:number,seed:number):Body {
    default:facts.times=r(2,3);question=`농도 ${high}% 용액에서 전체의 ${remove}%를 덜어내고 같은 질량의 물을 채운다. 매번 충분히 섞으며 이 작업을 ${facts.times}회 반복했을 때 최종 농도는?`;expression=`${high}${Array(facts.times).fill(`*(1-${remove}/100)`).join('')}`;unit='%';
   }
  } else if(family==='work') {
-  const A=a*4,B=b*6,C=c*8,early=r(1,4),eff=i===6?r(10,18)*5:i===7?r(12,19)*5:r(11,19)*10;
+  const A=a*4,B=b*6,C=c*8,early=r(1,3),eff=i===6?r(10,18)*5:i===7?r(12,19)*5:r(11,19)*10;
   facts={A,B,C,early,eff,units:c*100};unit='시간';
   switch(i){
    case 0:question=`동일한 일을 A는 ${A}시간, B는 ${B}시간에 혼자 마친다. 두 사람이 일정한 효율로 함께 하면 완료까지 시간은?`;expression=`1/(1/${A}+1/${B})`;break;
@@ -81,7 +81,7 @@ function generate(family:string,i:number,seed:number):Body {
    default:question=`A가 혼자 ${A}시간에 하는 일의 ${c*10}%가 이미 끝났다. 남은 일을 A 혼자 마치는 시간은?`;expression=`${A}*(1-${c*10}/100)`;facts.completed=c*10;
   }
  } else if(family==='cost') {
-  const cost=a*1000,markup=r(2,9)*10,discount=b*5,price=cost*(1+markup/100),fixed=c*10000,variable=b*100,count=r(2,10)*100,fee=r(1,4)*5;
+  const cost=a*1000,markup=r(2,9)*10,discount=b*5,price=cost*(1+markup/100),fixed=c*10000,variable=b*100,count=100,fee=5;
   facts={cost,markup,discount,price,fixed,variable,count,fee};unit='원';
   switch(i){
    case 0:question=`원가 ${cost}원인 상품을 원가 대비 ${markup}% 이익을 붙여 판매한다. 판매가는?`;expression=`${cost}*(1+${markup}/100)`;break;
@@ -116,10 +116,10 @@ function generate(family:string,i:number,seed:number):Body {
    case 7:{const people=r(6,28),per=r(2,8),gap=r(1,3),left=r(1,Math.min(9,people*gap-1)),short=people*gap-left;
     facts.left=left;facts.short=short;facts.per1=per;facts.per2=per+gap;facts.items=people*per+left;
     question=`사람들에게 물건을 ${per}개씩 주면 ${left}개가 남고 ${per+gap}개씩 주면 ${short}개가 부족하다. 사람 수는?`;expression=`(${left}+${short})/(${per+gap}-${per})`;}break;
-   case 8:case 9:{const cheapCount=r(5,25),dearCount=r(3,30);facts.cheap=r(1,5)*100;facts.expensive=facts.cheap+b*100;facts.n=cheapCount+dearCount;facts.total=cheapCount*facts.cheap+dearCount*facts.expensive;}question=`${facts.cheap}원짜리 ${i===8?'동전':'상품'}과 ${facts.expensive}원짜리를 합해 ${facts.n}개 가지고 있다. 총액 ${facts.total}원일 때 ${facts.expensive}원짜리는 몇 개인가?`;expression=`(${facts.total}-${facts.n}*${facts.cheap})/(${facts.expensive}-${facts.cheap})`;unit='개';break;
+   case 8:case 9:{const cheapCount=r(5,25),dearCount=r(3,30);facts.cheap=100;facts.expensive=100+b*100;facts.n=cheapCount+dearCount;facts.total=cheapCount*100+dearCount*facts.expensive;}question=`${facts.cheap}원짜리 ${i===8?'동전':'상품'}과 ${facts.expensive}원짜리를 합해 ${facts.n}개 가지고 있다. 총액 ${facts.total}원일 때 ${facts.expensive}원짜리는 몇 개인가?`;expression=`(${facts.total}-${facts.n}*${facts.cheap})/(${facts.expensive}-${facts.cheap})`;unit='개';break;
    case 10:facts.limit=r(20,500);memo=`${facts.limit}/${b}`;step('버림하기 전 나눗셈',memo);question=`1부터 ${facts.limit}까지의 자연수 중 ${b}의 배수는 몇 개인가?`;expression=`(${facts.limit}-${facts.limit%b})/${b}`;unit='개';break;
    case 11:facts.limit=r(15,199);memo=`${facts.limit}/2`;step('올림하기 전 나눗셈',memo);question=`1부터 ${facts.limit}까지의 자연수 중 홀수는 몇 개인가?`;expression=`(${facts.limit}+${facts.limit%2})/2`;unit='개';break;
-   case 12:{facts.mod1=r(3,9);facts.mod2=[11,13,17,19,23][r(0,4)];let x=1;
+   case 12:{facts.mod1=[3,5,7][r(0,2)];facts.mod2=[11,13,17][r(0,2)];let x=1;
     // When the larger remainder is already the answer the item needs no reasoning at all,
     // so keep drawing remainders until the smallest solution passes the larger divisor.
     for(let guard=0;guard<200;guard++){facts.rem1=r(1,facts.mod1-1);facts.rem2=r(1,facts.mod2-1);x=1;while(x%facts.mod1!==facts.rem1||x%facts.mod2!==facts.rem2)x++;if(x>facts.mod2)break;}
@@ -131,7 +131,7 @@ function generate(family:string,i:number,seed:number):Body {
    default:facts.width=a;facts.length=a+b;question=`직사각형의 가로가 세로보다 ${b}m 길고 둘레가 ${2*(a+a+b)}m이다. 세로 길이는?`;expression=`(${2*(a+a+b)}/2-${b})/2`;unit='m';
   }
  } else {
-  const n=r([10,11].includes(i)?6:[4,5,6].includes(i)?3:5,[4,5,6].includes(i)?6:i===1?9:i===12?13:10),k=[10,11].includes(i)?r(2,Math.max(2,Math.min(5,n-3))):r(2,4),red=r(2,[10,11].includes(i)?n-k:n-2),blue=n-red;facts={n,k,red,blue,a,b};unit='가지';
+  const n=r([10,11].includes(i)?6:[4,5,6].includes(i)?3:5,[4,5,6].includes(i)?6:i===1?9:i===12?13:10),k=r(2,4),red=r(2,[10,11].includes(i)?n-k:n-2),blue=n-red;facts={n,k,red,blue,a,b};unit='가지';
   const arrayWays=(size:number,pool:number)=>i===4?choose(pool-2,size-2)*2*factorial(size-1):i===5?choose(pool-2,size-2)*(factorial(size)-2*factorial(size-1)):choose(pool,size)*factorial(size-1);
   switch(i){
    case 0:question=`서로 다른 ${n}명 중 ${k}명을 순서 없이 뽑는 방법 수는?`;expression=chooseMemo(n,k);break;
