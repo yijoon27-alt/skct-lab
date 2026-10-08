@@ -1,6 +1,6 @@
 # SKCT LAB 작업 인수인계
 
-마지막 정리: 2026-10-08. 다음 작업은 **AGENTS.md → 이 파일 → README.md → 실제 코드/테스트 → git 상태** 순서로 확인한다. 사용자 요청과 AGENTS.md를 우선하며, 문서에 적힌 테스트 결과를 현재 코드의 통과 증거로 대신 사용하지 않는다.
+마지막 정리: 2026-10-08. 다음 작업은 **AGENTS.md → 이 파일 → [docs/NEXT.md](docs/NEXT.md) → README.md → 실제 코드/테스트 → git 상태** 순서로 확인한다. 다음에 할 일은 `docs/NEXT.md`에 정리해 두었다. 사용자 요청과 AGENTS.md를 우선하며, 문서에 적힌 테스트 결과를 현재 코드의 통과 증거로 대신 사용하지 않는다.
 
 ## 목적과 현재 환경
 
@@ -43,6 +43,7 @@
 | `scripts/review.ts` | 유형당 5문항 직접 검토용 샘플 생성 |
 | `scripts/check-live.mjs` | 실제 배포 사이트 기능 확인. 화면 전환 뒤 expect로 기다림 |
 | `docs/QUESTION_POLICY.md`, `REFERENCE_REVIEW.md`, `LINKAREER_REVIEW.md`, `QA.md` | 승인 규칙·직접 확인한 자료 범위·회차별 유형 집계·검사 근거 |
+| `docs/NEXT.md` | 다음에 할 일. 기출에서 확인했지만 아직 없는 문제 구조와 알려진 한계 |
 
 ## 문제를 만드는 방식
 
