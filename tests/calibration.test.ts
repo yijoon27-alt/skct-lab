@@ -7,7 +7,7 @@ import { applyGuidance } from '../src/engine/guidance';
 import { emptyStore,parseBackup } from '../src/engine/storage';
 import { createSession,grade,getStats,finish,revealSolution } from '../src/engine/session';
 it('신규 출제 45,000개는 숫자 규모·분모 기준 및 독립 검산을 통과',()=>{
- for(const t of practiceTemplates)for(let seed=1;seed<=500;seed++){const q=generateVerified(t,seed*7919);expect(calibrationErrors(q),q.id).toEqual([]);expect(q.generatorVersion).toBe('1.4.0');}
+ for(const t of practiceTemplates)for(let seed=1;seed<=500;seed++){const q=generateVerified(t,seed*7919);expect(calibrationErrors(q),q.id).toEqual([]);expect(q.generatorVersion).toBe('1.5.0');}
 });
 it('단순히 큰 숫자를 쓰는 문항은 런타임 출제에서 차단',()=>{
  const q=generateVerified(practiceTemplates.find(t=>t.id==='count-4')!,79);

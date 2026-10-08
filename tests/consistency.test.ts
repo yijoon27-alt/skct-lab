@@ -1,6 +1,6 @@
 import { describe,expect,it } from 'vitest';
 import { creativeTemplates } from '../src/engine/creative';
-import { templates,templateById,v12Templates,v13Templates,reproduce } from '../src/engine/bank';
+import { templates,templateById,v12Templates,v13Templates,v14Templates,reproduce } from '../src/engine/bank';
 import { creativeGuidance,guidanceErrors,applyGuidance } from '../src/engine/guidance';
 import { validate } from '../src/engine/verify';
 import { eul,particleErrors,ro,wa } from '../src/engine/korean';
@@ -30,7 +30,7 @@ describe('유형 = 핵심 공식 = 인식 신호 = 최단풀이',()=>{
   expect(validate({...q,keyFormula:'전체 합 = 각 집단 인원 × 평균의 합'})).toContain('다른 유형의 해설 어휘: 평균');
   expect(validate({...q,memo:format(q.answer)})).toContain('메모장 식이 정답 숫자 그 자체');
   expect(validate({...q,signal:''})).toContain('인식 신호 누락');
-  expect(validate({...q,question:q.question.replace('으로 나눈','로 나눈')}).join(' ')).toContain('조사 오류');
+  expect(validate({...q,question:'13로 나눈 나머지가 6인 가장 작은 양의 정수는?'}).join(' ')).toContain('조사 오류');
  });
 });
 describe('한국어 조사',()=>{
@@ -92,6 +92,15 @@ it('1.3.0 생성기 128개를 그대로 보존해 과거 기록을 재현',()=>{
  for(const t of v13Templates)for(let seed=1;seed<=5;seed++){
   const q=t.generate(seed*179);
   expect(q.generatorVersion,q.id).toBe('1.3.0');
+  expect(validate(q),q.id).toEqual([]);
+  expect(reproduce(q)).toEqual(q);
+ }
+});
+it('1.4.0 생성기 138개를 그대로 보존해 과거 기록을 재현',()=>{
+ expect(v14Templates).toHaveLength(138);
+ for(const t of v14Templates)for(let seed=1;seed<=4;seed++){
+  const q=t.generate(seed*179);
+  expect(q.generatorVersion,q.id).toBe('1.4.0');
   expect(validate(q),q.id).toEqual([]);
   expect(reproduce(q)).toEqual(q);
  }

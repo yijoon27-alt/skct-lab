@@ -26,7 +26,8 @@ export const iga = (value: number | string) => (finalOf(value) === 'none' ? '가
 // 이/가 and 은/는 are excluded on purpose: "5이다" is a copula and "있는" is a verb ending,
 // so only the three particles that can never be anything else are swept.
 const pairs: [string, string, (v: string) => string][] = [['으로', '로', ro], ['와', '과', wa], ['을', '를', eul]];
-const attached = /([0-9][0-9,]*(?:\.[0-9]+)?(?:\/[0-9]+)?)(으로|로|와|과|을|를)/g;
+// 좌표처럼 괄호가 닫힌 뒤에 붙는 조사도 끝 숫자의 받침으로 정해진다: (1,3)을.
+const attached = /([0-9][0-9,]*(?:\.[0-9]+)?(?:\/[0-9]+)?)\)?(으로|로|와|과|을|를)/g;
 export function particleErrors(text: string): string[] {
  const errors: string[] = [];
  for (const [a, b, pick] of pairs) {

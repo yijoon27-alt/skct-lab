@@ -14,8 +14,8 @@ function arrangements(n:number, predicate:(v:number[])=>boolean):number {
 }
 function paths(x:number,y:number):number {const dp=Array.from({length:x+1},()=>Array(y+1).fill(1));for(let a=1;a<=x;a++)for(let b=1;b<=y;b++)dp[a][b]=dp[a-1][b]+dp[a][b-1];return dp[x][y];}
 export function verifyAnswer(q:Question):boolean {
- if(q.subtype.startsWith('pat-'))return q.generatorVersion==='1.4.0'&&verifyPattern(q);
- if(q.subtype.startsWith('bayes-')||q.subtype.startsWith('refseq-'))return ['1.2.0','1.3.0','1.4.0'].includes(q.generatorVersion)&&verifyReference(q);
+ if(q.subtype.startsWith('pat-'))return ['1.4.0','1.5.0'].includes(q.generatorVersion)&&verifyPattern(q);
+ if(q.subtype.startsWith('bayes-')||q.subtype.startsWith('refseq-'))return ['1.2.0','1.3.0','1.4.0','1.5.0'].includes(q.generatorVersion)&&verifyReference(q);
  const x=q.answer,f=q.facts,id=q.subtype.split('-')[0],i=Number(q.subtype.split('-')[1]);const eq=close;
  if(id==='speed'){
   const {slow:s,fast:v,t,dist:d,c,a,b}=f;
@@ -113,15 +113,15 @@ export function verifyAnswer(q:Question):boolean {
  return false;
 }
 // Saved questions keep the number rendering of the generator that produced them.
-const render=(q:Question)=>q.decimals!==undefined?(v:number)=>v.toFixed(q.decimals!):['1.3.0','1.4.0'].includes(q.generatorVersion)?format:legacyFormat;
+const render=(q:Question)=>q.decimals!==undefined?(v:number)=>v.toFixed(q.decimals!):['1.3.0','1.4.0','1.5.0'].includes(q.generatorVersion)?format:legacyFormat;
 export function verifyExplanation(q:Question):boolean {
  try{return q.steps.length>0&&q.steps.every(s=>close(calculate(s.expression),s.value))&&close(q.steps.at(-1)!.value,q.answer)&&q.explanation===q.steps.map(s=>`${s.label}: ${s.expression.replaceAll('*','×').replaceAll('/','÷')} = ${render(q)(s.value)}`).join('\n');}catch{return false;}
 }
 export function validate(q:Question):string[] {
  const errors:string[]=[];
  if(!q||typeof q.question!=='string'||!q.question.trim()||q.question.length>6000)return ['문항 구조 오류'];
- if(!Number.isInteger(q.seed)||q.seed<0||q.seed>4294967295||!['1.0.0','1.1.0','1.2.0','1.3.0','1.4.0'].includes(q.generatorVersion))errors.push('시드·버전 오류');
- if(q.id!==`${q.subtype}-${q.generatorVersion==='1.0.0'?'v1':q.generatorVersion==='1.1.0'?'v2':q.generatorVersion==='1.2.0'?'v3':q.generatorVersion==='1.3.0'?'v4':'v5'}-${q.seed}`)errors.push('문항 식별자 오류');
+ if(!Number.isInteger(q.seed)||q.seed<0||q.seed>4294967295||!['1.0.0','1.1.0','1.2.0','1.3.0','1.4.0','1.5.0'].includes(q.generatorVersion))errors.push('시드·버전 오류');
+ if(q.id!==`${q.subtype}-${q.generatorVersion==='1.0.0'?'v1':q.generatorVersion==='1.1.0'?'v2':q.generatorVersion==='1.2.0'?'v3':q.generatorVersion==='1.3.0'?'v4':q.generatorVersion==='1.4.0'?'v5':'v6'}-${q.seed}`)errors.push('문항 식별자 오류');
  if(!Number.isFinite(q.answer))errors.push('유한하지 않은 정답');
  if(q.options?.length!==5||q.optionValues?.length!==5||!Number.isInteger(q.correctAnswer)||q.correctAnswer<0||q.correctAnswer>4)errors.push('선지 구조 오류');
  else {
@@ -133,10 +133,13 @@ export function validate(q:Question):string[] {
  }
  if(q.unit==='확률'&&(q.answer<0||q.answer>1))errors.push('불가능한 확률');
  if(['명','개','가지','그루'].includes(q.unit)&&(!Number.isInteger(q.answer)||q.answer<0))errors.push('정수 조건 오류');
+ // 금액은 1원 단위다. 11475/2원 같은 선지는 실제 시험에 나오지 않는다.
+ // 부동소수 오차는 format이 이미 정수로 표시하므로 허용 오차를 둔다.
+ if(q.unit==='원'&&q.generatorVersion==='1.5.0'&&Math.abs(q.answer-Math.round(q.answer))>1e-9)errors.push('금액 단위 오류');
  try{if(!verifyAnswer(q))errors.push('독립 조건 검산 실패');}catch{errors.push('검산 예외');}
  if(!verifyExplanation(q))errors.push('해설 계산 오류');
  // 유형과 해설 메타데이터의 일치, 그리고 문장의 조사까지 출제 전에 막는다.
  // 보존된 구버전 생성기는 당시 문장 그대로 재현해야 하므로 현행 버전에만 적용한다.
- const current=['1.3.0','1.4.0'].includes(q.generatorVersion)?particleErrors(q.question):[];
+ const current=['1.3.0','1.4.0','1.5.0'].includes(q.generatorVersion)?particleErrors(q.question):[];
  return [...errors,...calibrationErrors(q),...guidanceErrors(q),...current];
 }

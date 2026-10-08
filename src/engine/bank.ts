@@ -9,6 +9,10 @@ import { sequenceTemplates as v12Sequence } from './legacy/v12/sequence';
 import { probabilityTemplates as v12Probability, referenceSequenceTemplates as v12ReferenceSequence } from './legacy/v12/reference';
 import { probabilityTemplates, referenceSequenceTemplates } from './reference';
 import { patternTemplates } from './patterns';
+import { creativeTemplates as v14Creative } from './legacy/v14/creative';
+import { sequenceTemplates as v14Sequence } from './legacy/v14/sequence';
+import { probabilityTemplates as v14Probability, referenceSequenceTemplates as v14ReferenceSequence } from './legacy/v14/reference';
+import { patternTemplates as v14Pattern } from './legacy/v14/patterns';
 import { creativeTemplates as v13Creative } from './legacy/v13/creative';
 import { sequenceTemplates as v13Sequence } from './legacy/v13/sequence';
 import { probabilityTemplates as v13Probability, referenceSequenceTemplates as v13ReferenceSequence } from './legacy/v13/reference';
@@ -23,7 +27,8 @@ export const legacyTemplates=[...legacyCreative,...legacySequence];
 export const v11Templates=[...v11Creative,...v11Sequence];
 export const v12Templates=[...v12Creative,...v12Sequence,...v12Probability,...v12ReferenceSequence];
 export const v13Templates=[...v13Creative,...v13Sequence,...v13Probability,...v13ReferenceSequence];
-export function reproduce(q:Question):Question {const registry=q.generatorVersion==='1.0.0'?legacyTemplates:q.generatorVersion==='1.1.0'?v11Templates:q.generatorVersion==='1.2.0'?v12Templates:q.generatorVersion==='1.3.0'?v13Templates:q.generatorVersion==='1.4.0'?templates:[];const t=registry.find(t=>t.id===q.subtype);if(!t)throw Error('지원하지 않는 생성기 버전');return t.generate(q.seed);}
+export const v14Templates=[...v14Creative,...v14Sequence,...v14Probability,...v14ReferenceSequence,...v14Pattern];
+export function reproduce(q:Question):Question {const registry=q.generatorVersion==='1.0.0'?legacyTemplates:q.generatorVersion==='1.1.0'?v11Templates:q.generatorVersion==='1.2.0'?v12Templates:q.generatorVersion==='1.3.0'?v13Templates:q.generatorVersion==='1.4.0'?v14Templates:q.generatorVersion==='1.5.0'?templates:[];const t=registry.find(t=>t.id===q.subtype);if(!t)throw Error('지원하지 않는 생성기 버전');return t.generate(q.seed);}
 export const templateById=(id:string)=>templates.find(t=>t.id===id);
 export function generateVerified(template:Template,seed:number):Question {const q=template.generate(seed);const errors=validate(q);if(errors.length)throw new Error(`${q.id}: ${errors.join(', ')}`);return q;}
 // 링커리어 6회차 수열 120문항의 규칙 분포(docs/LINKAREER_REVIEW.md)와 제공 기출복원 해설에서 읽은

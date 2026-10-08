@@ -124,7 +124,7 @@ export function applyGuidance<T extends {subtype?:string;memo?:string;keyFormula
 }
 // 유형 = 핵심 공식 = 인식 신호 = 최단풀이 네 가지가 같은 유형을 가리키는지 확인한다.
 export function guidanceErrors(q:Question):string[]{
- if(!['1.3.0','1.4.0'].includes(q.generatorVersion))return [];
+ if(!['1.3.0','1.4.0','1.5.0'].includes(q.generatorVersion))return [];
  const errors:string[]=[];
  const fields:[string,string][]=[['핵심 공식',q.keyFormula],['인식 신호',q.signal],['최단풀이',q.shortcut],['메모장 식',q.memo]];
  for(const [label,value] of fields)if(typeof value!=='string'||!value.trim())errors.push(`${label} 누락`);
