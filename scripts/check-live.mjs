@@ -27,8 +27,11 @@ try {
   await page.locator('.explanation').waitFor();
  }
  const current=await page.evaluate(()=>JSON.parse(localStorage.getItem('skct-lab:v1')));
- assert(current.session.questions.some(q=>q.subtype==='refseq-5'));
- assert(current.session.questions.some(q=>q.subtype==='refseq-4'));
+ // 수열 세트는 고정 목록이 아니라 분야 분포로 뽑으므로 분야 단위로 확인한다.
+ const subtypes=current.session.questions.map(q=>q.subtype);
+ assert.equal(new Set(subtypes).size,20,'한 세트에 같은 유형이 두 번 들어감');
+ for(const [family,ids] of [['이전 두 항의 곱',['refseq-5']],['정수부·소수부 분리',['refseq-4','pat-8']],['분자·분모 독립',['seq-16','refseq-2','refseq-3','pat-4','pat-5','pat-6','pat-9']],['도형·격자',['refseq-10','refseq-11']]])
+  assert(subtypes.some(id=>ids.includes(id)),family);
  const diagramIndex=current.session.questions.findIndex(q=>q.diagram);
  assert(diagramIndex>=0);
  await page.getByRole('button',{name:`${diagramIndex+1}번 문제`,exact:true}).click();
@@ -36,10 +39,10 @@ try {
  await expect(page.locator('.question-meta')).not.toContainText('Hard');
  await page.getByRole('button',{name:'문제은행',exact:true}).click();
  await page.getByRole('combobox',{name:'문제은행 영역'}).selectOption('sequence');
- await expect(page.locator('.bank-row')).toHaveCount(27);
+ await expect(page.locator('.bank-row')).toHaveCount(37);
  await page.getByRole('combobox',{name:'문제은행 영역'}).selectOption('creative');
  await expect(page.locator('.bank-row')).toHaveCount(53);
  await page.getByRole('textbox',{name:'문제 유형 검색'}).fill('조건부 확률');
  await expect(page.getByRole('button',{name:'문제 보기',exact:true})).toHaveCount(3);
- console.log(`Live Pages: generator ${version}, instant solutions in both unlimited areas, calculator reset, new rules/diagrams, creative 53 + sequence 27 PASS`);
+ console.log(`Live Pages: generator ${version}, instant solutions in both unlimited areas, calculator reset, new rules/diagrams, creative 53 + sequence 37 PASS`);
 } finally {await browser.close();}
