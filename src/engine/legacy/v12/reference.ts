@@ -1,8 +1,7 @@
 // Independently authored rules inspired by the aggregate review, never source questions.
 import { build } from './build';
-import { calculate, format, rng } from './math';
-import { ro } from './korean';
-import type { Template, Step, Question } from './types';
+import { calculate, legacyFormat as format, rng } from '../../math';
+import type { Template, Step, Question } from '../../types';
 
 const probabilityNames=['조건부 확률 · 생산 출처','조건부 확률 · 검사 결과','조건부 확률 · 집단 선택'];
 export const probabilityTemplates:Template[]=probabilityNames.map((name,i)=>({
@@ -68,7 +67,7 @@ export const referenceSequenceTemplates:Template[]=specs.map(([name,difficulty,c
   for(let j=0;j<N;j++){
    let e='';
    switch(i){
-    case 0:e=`(${a}+${j}*${b})/${den}`;rule='같은 표현으로 통일하면 항의 차가 일정합니다.';formula=`공차 ${format(b/den)}${ro(format(b/den))} 목표 항 복원`;break;
+    case 0:e=`(${a}+${j}*${b})/${den}`;rule='같은 표현으로 통일하면 항의 차가 일정합니다.';formula=`공차 ${format(b/den)}로 목표 항 복원`;break;
     case 1:e=`${a}${Array(j).fill('*2').join('')}/${den}`;rule='분수와 소수를 통일하면 이웃한 항의 비가 2입니다.';formula='표현 통일 → 공비 → 빈칸 계산';break;
     case 2:e=`(${a}+${b}*${j}*(${j}+1)/2)/(${c}+${d}*${j})`;rule='분자의 차는 일정한 수의 1배, 2배, …이고 분모는 일정하게 증가합니다.';formula='분자의 계차와 분모의 공차를 각각 복원';break;
     case 3:e=`1/(${a}+${b}*${j}*(${j}+1)/2)`;rule='역수를 취하면 차가 일정한 수의 1배, 2배, …입니다.';formula='역수 → 계차 → 원래 값으로 복원';break;

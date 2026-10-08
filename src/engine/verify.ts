@@ -1,6 +1,8 @@
-import { calculate, close, format } from './math';
+import { calculate, close, format, legacyFormat } from './math';
 import { verifyReference } from './referenceVerify';
 import { calibrationErrors } from './calibration';
+import { guidanceErrors } from './guidance';
+import { particleErrors } from './korean';
 import type { Question } from './types';
 // No generator imports. Validate conditions against the proposed answer, not its construction formula.
 function combinations(n:number,k:number):number[][] {
@@ -11,7 +13,7 @@ function arrangements(n:number, predicate:(v:number[])=>boolean):number {
 }
 function paths(x:number,y:number):number {const dp=Array.from({length:x+1},()=>Array(y+1).fill(1));for(let a=1;a<=x;a++)for(let b=1;b<=y;b++)dp[a][b]=dp[a-1][b]+dp[a][b-1];return dp[x][y];}
 export function verifyAnswer(q:Question):boolean {
- if(q.subtype.startsWith('bayes-')||q.subtype.startsWith('refseq-'))return q.generatorVersion==='1.2.0'&&verifyReference(q);
+ if(q.subtype.startsWith('bayes-')||q.subtype.startsWith('refseq-'))return ['1.2.0','1.3.0'].includes(q.generatorVersion)&&verifyReference(q);
  const x=q.answer,f=q.facts,id=q.subtype.split('-')[0],i=Number(q.subtype.split('-')[1]);const eq=close;
  if(id==='speed'){
   const {slow:s,fast:v,t,dist:d,c,a,b}=f;
@@ -108,14 +110,16 @@ export function verifyAnswer(q:Question):boolean {
  }
  return false;
 }
+// Saved questions keep the number rendering of the generator that produced them.
+const render=(q:Question)=>q.generatorVersion==='1.3.0'?format:legacyFormat;
 export function verifyExplanation(q:Question):boolean {
- try{return q.steps.length>0&&q.steps.every(s=>close(calculate(s.expression),s.value))&&close(q.steps.at(-1)!.value,q.answer)&&q.explanation===q.steps.map(s=>`${s.label}: ${s.expression.replaceAll('*','×').replaceAll('/','÷')} = ${format(s.value)}`).join('\n');}catch{return false;}
+ try{return q.steps.length>0&&q.steps.every(s=>close(calculate(s.expression),s.value))&&close(q.steps.at(-1)!.value,q.answer)&&q.explanation===q.steps.map(s=>`${s.label}: ${s.expression.replaceAll('*','×').replaceAll('/','÷')} = ${render(q)(s.value)}`).join('\n');}catch{return false;}
 }
 export function validate(q:Question):string[] {
  const errors:string[]=[];
  if(!q||typeof q.question!=='string'||!q.question.trim()||q.question.length>6000)return ['문항 구조 오류'];
- if(!Number.isInteger(q.seed)||q.seed<0||q.seed>4294967295||!['1.0.0','1.1.0','1.2.0'].includes(q.generatorVersion))errors.push('시드·버전 오류');
- if(q.id!==`${q.subtype}-${q.generatorVersion==='1.0.0'?'v1':q.generatorVersion==='1.1.0'?'v2':'v3'}-${q.seed}`)errors.push('문항 식별자 오류');
+ if(!Number.isInteger(q.seed)||q.seed<0||q.seed>4294967295||!['1.0.0','1.1.0','1.2.0','1.3.0'].includes(q.generatorVersion))errors.push('시드·버전 오류');
+ if(q.id!==`${q.subtype}-${q.generatorVersion==='1.0.0'?'v1':q.generatorVersion==='1.1.0'?'v2':q.generatorVersion==='1.2.0'?'v3':'v4'}-${q.seed}`)errors.push('문항 식별자 오류');
  if(!Number.isFinite(q.answer))errors.push('유한하지 않은 정답');
  if(q.options?.length!==5||q.optionValues?.length!==5||!Number.isInteger(q.correctAnswer)||q.correctAnswer<0||q.correctAnswer>4)errors.push('선지 구조 오류');
  else {
@@ -123,11 +127,14 @@ export function validate(q:Question):string[] {
   if(q.optionValues.some(v=>!Number.isFinite(v)))errors.push('선지 숫자 오류');
   if(q.optionValues.some((v,i)=>q.optionValues.slice(0,i).some(x=>close(v,x))))errors.push('수치 중복 선지');
   if(q.optionValues.filter(v=>close(v,q.answer)).length!==1||!close(q.optionValues[q.correctAnswer],q.answer))errors.push('정답 위치 오류');
-  if(q.options.some((s,i)=>s!==format(q.optionValues[i])+(q.unit&&q.unit!=='확률'?` ${q.unit}`:'')))errors.push('선지 표시·단위 오류');
+  if(q.options.some((s,i)=>s!==render(q)(q.optionValues[i])+(q.unit&&q.unit!=='확률'?` ${q.unit}`:'')))errors.push('선지 표시·단위 오류');
  }
  if(q.unit==='확률'&&(q.answer<0||q.answer>1))errors.push('불가능한 확률');
  if(['명','개','가지','그루'].includes(q.unit)&&(!Number.isInteger(q.answer)||q.answer<0))errors.push('정수 조건 오류');
  try{if(!verifyAnswer(q))errors.push('독립 조건 검산 실패');}catch{errors.push('검산 예외');}
  if(!verifyExplanation(q))errors.push('해설 계산 오류');
- return [...errors,...calibrationErrors(q)];
+ // 유형과 해설 메타데이터의 일치, 그리고 문장의 조사까지 출제 전에 막는다.
+ // 보존된 구버전 생성기는 당시 문장 그대로 재현해야 하므로 현행 버전에만 적용한다.
+ const current=q.generatorVersion==='1.3.0'?particleErrors(q.question):[];
+ return [...errors,...calibrationErrors(q),...guidanceErrors(q),...current];
 }

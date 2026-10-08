@@ -1,5 +1,5 @@
 import { build, type Body } from './build';
-import { calculate, choose, factorial, format, rng } from '../math';
+import { calculate, choose, factorial, legacyFormat as format, rng } from '../math';
 import type { Difficulty, Template } from '../types';
 const groups: [string,string,string[]][] = [
  ['speed','거리·속력·시간',['기본 이동','같은 거리 왕복','속력비·시간비','도착 시간차','마주 보는 이동','같은 방향 추월','선출발 후 추월','추월 후 왕복','원형 트랙 마주침','원형 트랙 추월','두 기차 통과','기차와 터널','기차와 다리','배의 상류·하류','영역 완전 통과','시간 단위 변환']],

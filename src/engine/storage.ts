@@ -2,6 +2,7 @@ import type { Store } from './types';
 import { validate } from './verify';
 import { normalizeAttempts } from './identity';
 import { templates,reproduce } from './bank';
+import { applyGuidance } from './guidance';
 export const STORAGE_KEY='skct-lab:v1';
 export function emptyStore():Store{return {version:1,attempts:[],session:null,notes:{},favorites:[],reports:[],results:[],settings:{dark:false,autoNext:true,timed:true},drafts:[],recent:[]};}
 export function parseBackup(text:string):Store {
@@ -9,7 +10,10 @@ export function parseBackup(text:string):Store {
  const x=JSON.parse(text);
  if(!x||x.version!==1||!Array.isArray(x.attempts)||!Array.isArray(x.favorites)||!Array.isArray(x.results)||!Array.isArray(x.reports)||!Array.isArray(x.recent)||!Array.isArray(x.drafts)||!x.notes||typeof x.notes!=='object'||Array.isArray(x.notes)||!x.settings||typeof x.settings.dark!=='boolean'||typeof x.settings.autoNext!=='boolean'||typeof x.settings.timed!=='boolean')throw new Error('지원하지 않는 백업 형식입니다. 기존 데이터는 유지됩니다.');
  const qs=[...x.attempts.map((a:any)=>a.question),...x.favorites,...x.reports.map((a:any)=>a.question),...(x.session?.questions||[])];
- if(qs.some(q=>{if(!q||validate(q).length)return true;const t=templates.find(t=>t.id===q.subtype);if(!t)return true;const canonical=reproduce(q);return ['question','options','optionValues','facts','steps','answer','explanation','difficulty','type','category','shortcut','memo','keyFormula','signal','rule','sequence','diagram'].some(key=>JSON.stringify((q as any)[key])!==JSON.stringify((canonical as any)[key]));}))throw new Error('백업에 검증되지 않은 문항이 있습니다.');
+ // Correct the explanation metadata of older snapshots in place before the canonical comparison,
+ // and normalise the canonical copy the same way so the integrity check stays byte for byte.
+ for(const q of qs)applyGuidance(q);
+ if(qs.some(q=>{if(!q||validate(q).length)return true;const t=templates.find(t=>t.id===q.subtype);if(!t)return true;const canonical=applyGuidance(reproduce(q));return ['question','options','optionValues','facts','steps','answer','explanation','difficulty','type','category','shortcut','memo','keyFormula','signal','rule','sequence','diagram'].some(key=>JSON.stringify((q as any)[key])!==JSON.stringify((canonical as any)[key]));}))throw new Error('백업에 검증되지 않은 문항이 있습니다.');
  if(x.attempts.some((a:any)=>!a.id||typeof a.first!=='boolean'||typeof a.correct!=='boolean'||!Number.isFinite(a.seconds)||a.seconds<0||!Number.isFinite(Date.parse(a.at))||typeof a.note!=='string'||(a.assisted!==undefined&&typeof a.assisted!=='boolean')||(a.selected!==null&&(!Number.isInteger(a.selected)||a.selected<0||a.selected>4))||a.correct!==(a.selected===a.question.correctAnswer)))throw new Error('학습 기록 형식이 잘못되었습니다.');
  x.attempts=normalizeAttempts(x.attempts);
  if(x.results.some((a:any)=>!a.id||!['creative','sequence'].includes(a.area)||!Number.isFinite(Date.parse(a.at))||!Number.isInteger(a.score)||!Number.isInteger(a.count)||a.count<1||a.score<0||a.score>a.count||!Number.isFinite(a.seconds)||a.seconds<0||(a.assisted!==undefined&&(!Number.isInteger(a.assisted)||a.assisted<0||a.assisted>a.count))))throw new Error('시험 결과 형식 오류');

@@ -1,5 +1,5 @@
 import { build } from './build';
-import { rng, primes, format } from '../math';
+import { rng, primes, legacyFormat as format } from '../math';
 import type { Difficulty, Template } from '../types';
 const names=['등차수열','등비수열','공차가 변하는 수열','계차수열','이중 계차수열','곱셈 후 덧셈','곱셈 후 뺄셈','교대 연산','홀수항·짝수항 분리','피보나치','피보나치 변형','삼각수','제곱수','세제곱수','소수 나열','분수수열','분자·분모 독립 규칙','역수수열','소수점 수열','음수 교대','부호 반복','군수열','여러 단계 연산','두 규칙 교차','복합 수열'];
 export const sequenceTemplates:Template[]=names.map((name,i)=>{

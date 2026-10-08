@@ -1,4 +1,4 @@
-import { format, rng } from '../../math';
+import { legacyFormat as format, rng } from '../../math';
 import type { Area, Difficulty, Question, Step } from '../../types';
 export interface Body { question:string; answer:number; unit:string; facts:Record<string,number>; steps:Step[]; formula:string; signal:string; shortcut:string; sequence?:number[]; rule?:string; memo?:string }
 export function build(id:string,category:string,area:Area,difficulty:Difficulty,seed:number,b:Body):Question {

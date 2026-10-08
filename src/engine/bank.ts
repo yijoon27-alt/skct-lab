@@ -4,6 +4,9 @@ import { creativeTemplates as legacyCreative } from './legacy/creative';
 import { sequenceTemplates as legacySequence } from './legacy/sequence';
 import { creativeTemplates as v11Creative } from './legacy/v11/creative';
 import { sequenceTemplates as v11Sequence } from './legacy/v11/sequence';
+import { creativeTemplates as v12Creative } from './legacy/v12/creative';
+import { sequenceTemplates as v12Sequence } from './legacy/v12/sequence';
+import { probabilityTemplates as v12Probability, referenceSequenceTemplates as v12ReferenceSequence } from './legacy/v12/reference';
 import { probabilityTemplates, referenceSequenceTemplates } from './reference';
 import { validate } from './verify';
 import { rng } from './math';
@@ -14,7 +17,8 @@ const basicOnly=new Set(['seq-9','seq-13','seq-15','seq-17','seq-19','seq-20','s
 export const practiceTemplates=templates.filter(t=>t.difficulty!=='easy'&&!basicOnly.has(t.id));
 export const legacyTemplates=[...legacyCreative,...legacySequence];
 export const v11Templates=[...v11Creative,...v11Sequence];
-export function reproduce(q:Question):Question {const registry=q.generatorVersion==='1.0.0'?legacyTemplates:q.generatorVersion==='1.1.0'?v11Templates:q.generatorVersion==='1.2.0'?templates:[];const t=registry.find(t=>t.id===q.subtype);if(!t)throw Error('지원하지 않는 생성기 버전');return t.generate(q.seed);}
+export const v12Templates=[...v12Creative,...v12Sequence,...v12Probability,...v12ReferenceSequence];
+export function reproduce(q:Question):Question {const registry=q.generatorVersion==='1.0.0'?legacyTemplates:q.generatorVersion==='1.1.0'?v11Templates:q.generatorVersion==='1.2.0'?v12Templates:q.generatorVersion==='1.3.0'?templates:[];const t=registry.find(t=>t.id===q.subtype);if(!t)throw Error('지원하지 않는 생성기 버전');return t.generate(q.seed);}
 export const templateById=(id:string)=>templates.find(t=>t.id===id);
 export function generateVerified(template:Template,seed:number):Question {const q=template.generate(seed);const errors=validate(q);if(errors.length)throw new Error(`${q.id}: ${errors.join(', ')}`);return q;}
 export interface Options { area:Area; seed?:number; count?:number; difficulty?:Difficulty|'balanced'; subtypes?:string[]; strategy?:'random'|'weak'|'speed'; attempts?:Attempt[]; recent?:string[] }

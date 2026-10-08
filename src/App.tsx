@@ -2,6 +2,7 @@ import { lazy,Suspense,useCallback,useEffect,useRef,useState } from 'react';
 import { ArrowUpRight,ArrowRight,ArrowLeft,Sigma,TrendingUp,NotebookPen,BarChart3,Layers,Infinity as InfinityIcon,Database,Sun,Moon,Download,Upload,Star,Flag,Check,Clock,Target,RotateCcw,Menu,X,Play,Pause,Calculator,ShieldCheck,BookOpen,ChevronRight,Home } from 'lucide-react';
 import type { Area,Difficulty,Mode,Question,Session,Store } from './engine/types';
 import { makeSet,practiceTemplates,templateById,generateVerified } from './engine/bank';
+import { GENERATOR_VERSION } from './engine/build';
 import { canMove,createSession,finish,grade,getStats,tick,revealSolution } from './engine/session';
 import { QuestionDiagram } from './components/QuestionDiagram';
 import { questionPrompt } from './engine/presentation';
@@ -16,7 +17,7 @@ const difficultyName=(d:Difficulty)=>({easy:'Easy',medium:'Medium',hard:'Hard'}[
 const duration=(n:number)=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(Math.floor(n%60)).padStart(2,'0')}`;
 const navigation=[{page:'home' as Page,label:'학습 홈',icon:Home},{page:'focus' as Page,label:'유형별 집중 훈련',icon:Target},{page:'wrong' as Page,label:'오답노트',icon:NotebookPen},{page:'stats' as Page,label:'나의 학습 통계',icon:BarChart3},{page:'unlimited' as Page,label:'무제한 연습',icon:InfinityIcon},{page:'bank' as Page,label:'문제은행',icon:Database}];
 const initial=loadStore();
-if(initial.store.session&&!initial.store.session.startedAt&&!initial.store.session.done&&!Object.keys(initial.store.session.answers).length&&initial.store.session.questions.some(q=>q.generatorVersion!=='1.2.0'||!practiceTemplates.some(t=>t.id===q.subtype))){initial.store.notes={...initial.store.session.notes,...initial.store.notes};initial.store.session=null;}
+if(initial.store.session&&!initial.store.session.startedAt&&!initial.store.session.done&&!Object.keys(initial.store.session.answers).length&&initial.store.session.questions.some(q=>q.generatorVersion!==GENERATOR_VERSION||!practiceTemplates.some(t=>t.id===q.subtype))){initial.store.notes={...initial.store.session.notes,...initial.store.notes};initial.store.session=null;}
 if(!initial.store.session)initial.store.session=createSession(makeSet({area:'creative',seed:20261007}),'creative','card');
 export default function App(){
  const [store,setStore]=useState<Store>(initial.store),[storageError,setStorageError]=useState(initial.error),[page,setPage]=useState<Page>('practice'),[selected,setSelected]=useState<number|null>(null),[toast,setToast]=useState(''),[mobileMenu,setMobileMenu]=useState(false),[modal,setModal]=useState<'submit'|'report'|'replace'|'import'|null>(null),[pending,setPending]=useState<Session|null>(null),[imported,setImported]=useState<Store|null>(null),[reportReason,setReportReason]=useState('정답 오류'),[reportDetail,setReportDetail]=useState(''),[area,setArea]=useState<Area>('creative'),[mode,setMode]=useState<Mode>('card'),[difficulty,setDifficulty]=useState<Difficulty|'balanced'>('balanced'),[strategy,setStrategy]=useState<'random'|'weak'|'speed'>('random'),[chosen,setChosen]=useState<string[]>([]),[query,setQuery]=useState(''),[wrongCategory,setWrongCategory]=useState('all'),[wrongDifficulty,setWrongDifficulty]=useState('all'),[wrongSort,setWrongSort]=useState('recent'),[preview,setPreview]=useState<Question|null>(null);
