@@ -37,3 +37,26 @@ it('정답만 유일하게 어떤 단위의 배수여서 계산 없이 고를 �
  }
  expect(guessable/total,`${guessable}/${total} 문항이 선지만 보고 고를 수 있음`).toBeLessThan(0.02);
 });
+it('문제 문장에 고정된 숫자가 박혀 있으면 안 된다',()=>{
+ // 20%, 10%처럼 문장에 적힌 숫자는 facts에 없어서 조건 검사에 걸리지 않는다.
+ // 숫자를 자리표시자로 바꾼 문장 뼈대가 같은 문항끼리 자리별로 비교한다.
+ const allowed:Record<string,number[]>={
+  'count-16':[0,0],      // (0,0)에서 출발
+  'cost-14':[1],         // 1원 단위 올림
+  'seq-17':[1,1,1,1,1,1,1],'refseq-3':[1,1,1,1,1,1,1],'count-13':[1,1],  // 역수·독립 사건의 분자 1은 유형의 정의
+  'ratio-10':[1],'ratio-11':[1],               // 1부터 N까지
+ };
+ for(const t of practiceTemplates){
+  const qs=Array.from({length:120},(_,i)=>t.generate((i+1)*7919).question.split('\n')[0]);
+  const groups=new Map<string,number[][]>();
+  for(const q of qs){
+   const nums=(q.match(/-?\d+(?:\.\d+)?/g)||[]).map(Number);
+   const shape=q.replace(/-?\d+(?:\.\d+)?/g,'#');
+   groups.set(shape,[...(groups.get(shape)||[]),nums]);
+  }
+  const lists=[...groups.values()].sort((a,b)=>b.length-a.length)[0];
+  if(lists.length<40)continue;
+  const fixed=lists[0].filter((_,i)=>lists.every(v=>v[i]===lists[0][i]));
+  expect(fixed,`${t.id} ${t.name}: 문장에 고정된 숫자`).toEqual(allowed[t.id]??[]);
+ }
+});

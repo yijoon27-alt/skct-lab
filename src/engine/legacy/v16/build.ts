@@ -1,8 +1,8 @@
-import { format, rng } from './math';
-import type { Area, Difficulty, Question, Step } from './types';
+import { format, rng } from '../../math';
+import type { Area, Difficulty, Question, Step } from '../../types';
 // Single source of truth for the generator version. A hardcoded copy in App.tsx silently
 // discarded every restored session on the 1.2.0 → 1.3.0 bump, so nothing re-states this string.
-export const GENERATOR_VERSION='1.7.0';
+export const GENERATOR_VERSION='1.6.0';
 // decimals: 문제를 소수로 제시한 수열은 선지도 소수로 적는다. 0.7, 0.9, 1.1 수열의 답이 17/10으로
 // 나오면 실전에서 쓸 수 없는 화면이 된다.
 export interface Body { question:string; answer:number; unit:string; facts:Record<string,number>; steps:Step[]; formula:string; signal:string; shortcut:string; sequence?:number[]; rule?:string; memo?:string; decimals?:number }
@@ -26,5 +26,5 @@ export function build(id:string,category:string,area:Area,difficulty:Difficulty,
  for(let j=values.length-1;j>0;j--){const k=r(0,j);[values[j],values[k]]=[values[k],values[j]];}
  const suffix=b.unit==='확률'?'':b.unit;
  const show=(v:number)=>b.decimals===undefined?format(v):v.toFixed(b.decimals);
- return {id:`${id}-v8-${seed>>>0}`,type:area,subtype:id,category,difficulty,question:b.question,options:values.map(v=>show(v)+(suffix?` ${suffix}`:'')),optionValues:values,correctAnswer:values.indexOf(b.answer),answer:b.answer,unit:b.unit,explanation:b.steps.map(s=>`${s.label}: ${s.expression.replaceAll('*','×').replaceAll('/','÷')} = ${show(s.value)}`).join('\n'),shortcut:b.shortcut,memo:b.memo||b.steps.at(-1)?.expression||'',keyFormula:b.formula,signal:b.signal,steps:b.steps,seed:seed>>>0,generatorVersion:GENERATOR_VERSION,facts:b.facts,sequence:b.sequence,rule:b.rule,decimals:b.decimals};
+ return {id:`${id}-v7-${seed>>>0}`,type:area,subtype:id,category,difficulty,question:b.question,options:values.map(v=>show(v)+(suffix?` ${suffix}`:'')),optionValues:values,correctAnswer:values.indexOf(b.answer),answer:b.answer,unit:b.unit,explanation:b.steps.map(s=>`${s.label}: ${s.expression.replaceAll('*','×').replaceAll('/','÷')} = ${show(s.value)}`).join('\n'),shortcut:b.shortcut,memo:b.memo||b.steps.at(-1)?.expression||'',keyFormula:b.formula,signal:b.signal,steps:b.steps,seed:seed>>>0,generatorVersion:GENERATOR_VERSION,facts:b.facts,sequence:b.sequence,rule:b.rule,decimals:b.decimals};
 }

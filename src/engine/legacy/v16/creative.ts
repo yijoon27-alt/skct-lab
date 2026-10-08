@@ -1,8 +1,8 @@
 import { build, type Body } from './build';
-import { calculate, choose, factorial, format, gcd, rng } from './math';
-import { creativeGuidance } from './guidance';
-import { eul, ro, wa } from './korean';
-import type { Difficulty, Template } from './types';
+import { calculate, choose, factorial, format, gcd, rng } from '../../math';
+import { creativeGuidance } from '../../guidance';
+import { eul, ro, wa } from '../../korean';
+import type { Difficulty, Template } from '../../types';
 const groups: [string,string,string[]][] = [
  ['speed','거리·속력·시간',['기본 이동','같은 거리 왕복','속력비·시간비','도착 시간차','마주 보는 이동','같은 방향 추월','선출발 후 추월','추월 후 왕복','원형 트랙 마주침','원형 트랙 추월','두 기차 통과','기차와 터널','기차와 다리','배의 상류·하류','영역 완전 통과','시간 단위 변환']],
  ['mix','농도·혼합',['서로 다른 용액 혼합','혼합 후 농도','목표 농도 혼합량','물 추가','물 증발','용액 일부 제거','제거 후 물 보충','혼합 후 증발','가중평균 농도','농도차 역비','연속 제거·보충']],
@@ -39,10 +39,8 @@ function generate(family:string,i:number,seed:number):Body {
    case 7:question=`A가 시속 ${slow}km로 출발한 ${t}분 뒤, B가 같은 곳에서 시속 ${fast}km로 출발했다. B는 A를 처음 따라잡은 즉시 같은 속력으로 출발점까지 돌아왔다. B의 총 이동 시간은?`;expression=`2*${slow}*${t}/(${fast}-${slow})`;break;
    case 8:facts.dist=c;question=`둘레 ${c}km인 원형 트랙에서 두 자동차가 같은 지점에서 반대 방향으로 시속 ${slow}km와 ${fast}km로 달린다. 출발 이후 처음 다시 만나는 시간은?`;expression=`${c}/(${slow}+${fast})*60`;break;
    case 9:facts.dist=c;question=`둘레 ${c}km인 원형 트랙에서 같은 지점에서 같은 방향으로 시속 ${slow}km와 ${fast}km로 출발한다. 빠른 사람이 처음 한 바퀴 앞서는 시간은?`;expression=`${c}/(${fast}-${slow})*60`;break;
-   case 10: {facts.l1=r(3,12)*20;let seconds=r(15,60);while((a+b)*seconds-facts.l1<60||((a+b)*seconds-facts.l1)%10)seconds++;facts.l2=(a+b)*seconds-facts.l1;}question=`길이 ${facts.l1}m와 ${facts.l2}m인 두 기차가 초속 ${a}m와 ${b}m로 마주 달린다. 앞부분이 만난 순간부터 완전히 통과할 때까지 걸리는 시간은?`;expression=`(${facts.l1}+${facts.l2})/(${a}+${b})`;unit='초';break;
-   case 11:case 12: {const metres=[10,15,20,25,30][r(0,4)];facts.slow=metres*3.6;facts.length=r(3,12)*20;
-    let seconds=r(12,45);while(metres*seconds-facts.length<100||(metres*seconds-facts.length)%10)seconds++;facts.region=metres*seconds-facts.length;
-    const crossing=i===11?'터널':'다리';question=`길이 ${facts.length}m인 기차가 시속 ${facts.slow}km로 길이 ${facts.region}m인 ${crossing}${eul(crossing)} 통과한다. 앞부분 진입부터 뒷부분 이탈까지의 시간은?`;}expression=`(${facts.length}+${facts.region})/(${facts.slow}/3.6)`;unit='초';break;
+   case 10: facts.l1=r(4,14)*20;facts.l2=r(4,14)*20;question=`길이 ${facts.l1}m와 ${facts.l2}m인 두 기차가 초속 ${a}m와 ${b}m로 마주 달린다. 앞부분이 만난 순간부터 완전히 통과할 때까지 걸리는 시간은?`;expression=`(${facts.l1}+${facts.l2})/(${a}+${b})`;unit='초';break;
+   case 11:case 12: {facts.length=r(4,14)*20;facts.region=r(2,14)*100;const crossing=i===11?'터널':'다리';question=`길이 ${facts.length}m인 기차가 시속 ${slow}km로 길이 ${facts.region}m인 ${crossing}${eul(crossing)} 통과한다. 앞부분 진입부터 뒷부분 이탈까지의 시간은?`;}expression=`(${facts.length}+${facts.region})/(${slow}/3.6)`;unit='초';break;
    // 유속이 배 속력의 1/3로 고정돼 있어 정답이 한 변수에만 좌우됐다.
    case 13: {const water=r(1,5),speed=water+r(3,10),up=speed-water,down=speed+water;
     const unit=up*down/gcd(120*speed,up*down),perUnit=120*speed/gcd(120*speed,up*down);
@@ -52,8 +50,8 @@ function generate(family:string,i:number,seed:number):Body {
   }
  } else if(family==='mix') {
   // 목표 농도를 두 농도의 한가운데로 두면 농도차가 늘 1:1이 되어 '더할 질량 = 기준 질량'이 항상 성립한다.
-  const near=r(1,4),far=r(1,4),span=r(2,4);
-  const low=r(4,20),high=low+(near+far)*span,target=low+near*span;
+  const near=r(1,4),far=r(1,4),span=r(2,5);
+  const low=r(3,12),high=low+(near+far)*span,target=low+near*span;
   const m1=far*r(1,9)*100,m2=r(1,8)*100,remove=r(2,6)*10;
   facts={low,high,m1,m2,target,remove,near,far};unit='g';
   switch(i){
@@ -95,8 +93,7 @@ function generate(family:string,i:number,seed:number):Body {
    // 두 비율을 잇달아 적용하면 10의 배수여야 금액이 정수로 떨어진다.
    case 6:{const first=r(1,4)*10,second=r(1,4)*10;facts.discount=first;facts.b=second;question=`정가 ${format(price)}원에서 먼저 ${first}%, 할인된 가격에서 다시 ${second}% 할인한다. 최종 판매가는?`;expression=`${price}*(1-${first}/100)*(1-${second}/100)`;}break;
    case 7:{const first=r(1,4)*10,second=r(1,4)*10;facts.discount=first;facts.b=second;question=`가격 ${cost}원을 먼저 ${first}% 올리고, 오른 가격에서 다시 ${second}% 올렸다. 최종 가격은?`;expression=`${cost}*(1+${first}/100)*(1+${second}/100)`;}break;
-   case 8:{const pay=r(2,4),bundles=r(2,8);facts.pay=pay;facts.bundles=bundles;
-    question=`개당 ${cost}원인 상품의 '${pay}개 값으로 ${pay+1}개 제공' 행사를 이용한다. ${bundles*(pay+1)}개를 구매할 때 총지불액은?`;expression=`${cost}*${bundles}*${pay}`;}break;
+   case 8:facts.dist=c;question=`개당 ${cost}원인 상품의 '2개 값으로 3개 제공' 행사를 이용한다. ${c*3}개를 구매할 때 총지불액은?`;expression=`${cost}*${c}*2`;facts.bundles=c;break;
    case 9:question=`${cost*100}원을 투자하여 수수료 없이 원금 대비 ${discount}%의 수익을 얻었다. 원금을 포함한 회수 금액은?`;expression=`${cost}*100*(1+${discount}/100)`;break;
    case 10:question=`판매가 ${format(price)}원에서 ${fee}% 판매 수수료를 뗀다. 상품 원가 ${cost}원 외 비용이 없다면 순이익은?`;expression=`${price}*(1-${fee}/100)-${cost}`;break;
    case 11:question=`고정비 ${fixed}원, 제품 한 개의 변동비 ${variable}원이다. ${count}개 생산 시 총비용은?`;expression=`${fixed}+${variable}*${count}`;break;
@@ -105,25 +102,13 @@ function generate(family:string,i:number,seed:number):Body {
    default:facts.defects=r(1,8)*5;memo=`${cost}*${count}/(${count}*(1-${facts.defects}/100))`;step('정상 제품당 원가 하한',memo);question=`원가 ${cost}원인 상품 ${count}개 중 ${facts.defects}%가 불량으로 폐기되었다. 정상 제품을 모두 같은 가격에 팔아 원가 총액 이상을 회수하려면 개당 최소 판매가는? (1원 단위 올림, 다른 비용 없음)`;expression=String(Math.ceil(cost*count/(count*(1-facts.defects/100))));
   }
  } else if(family==='ratio') {
-  const men=r(2,20)*50,women=r(2,20)*50,N=men+women,s1=55+r(0,9)*5,s2=40+r(0,14)*5;
+  const men=r(3,30)*10,women=r(3,30)*10,N=men+women,s1=55+r(0,9)*5,s2=40+r(0,14)*5;
   facts={a,b,c,d,men,women,N,s1,s2};unit='명';
   switch(i){
    // 전체 인원이 비의 합으로 나누어떨어져야 남학생 수가 정수가 된다.
    case 0:{const total=(a+b)*r(4,24);facts.N=total;question=`남녀 비율 ${a}:${b}인 동아리의 전체 인원은 ${total}명이다. 남학생은 몇 명인가?`;expression=`${total}*${a}/(${a}+${b})`;}break;
-   // 비율을 아무렇게나 뽑으면 답이 100/243배처럼 읽을 수 없는 분수가 된다. 분모가 작은 조합만 쓴다.
-   case 1:{let up=r(1,40),down=r(1,40);
-    const plain=(x:number,y:number)=>{const top=men*(100+x),bottom=women*(100+y);return bottom/gcd(top,bottom)<=20;};
-    for(let guard=0;guard<40&&!plain(up,down);guard++){up=r(1,40);down=r(1,40);}
-    // 둘 다 같은 비율이면 답이 인원의 비 그대로라 분모가 반드시 작아진다.
-    if(!plain(up,down))down=up;
-    facts.mRate=up;facts.wRate=down;
-    question=`남학생 ${men}명과 여학생 ${women}명이 있었다. 남학생은 ${up}%, 여학생은 ${down}% 늘었다. 늘어난 뒤 남학생 수를 여학생 수로 나눈 값은?`;
-    expression=`(${men}*(100+${up}))/(${women}*(100+${down}))`;unit='배';}break;
-   // 두 비율이 같으면 남학생 수를 되찾을 수 없으므로 서로 다르게 뽑는다.
-   case 2:{const up=r(1,20)*2;let down=r(1,20)*2;while(down===up)down=r(1,20)*2;
-    const increase=(men*up+women*down)/100;facts.mRate=up;facts.wRate=down;facts.increase=increase;facts.men=men;
-    question=`전체 ${N}명인 모임에서 남학생은 ${up}%, 여학생은 ${down}% 늘어 총 ${increase}명이 증가했다. 증가 전 남학생 수는?`;
-    expression=`(${increase}*100-${N}*${down})/(${up}-${down})`;}break;
+   case 1:question=`남학생 ${men}명과 여학생 ${women}명이 있었다. 남학생은 20%, 여학생은 10% 늘었다. 늘어난 뒤 남학생 수를 여학생 수로 나눈 값은?`;expression=`(${men}*1.2)/(${women}*1.1)`;unit='배';break;
+   case 2:facts.increase=men*0.2+women*0.1;facts.men=men;question=`전체 ${N}명인 모임에서 남학생은 20%, 여학생은 10% 늘어 총 ${facts.increase}명이 증가했다. 증가 전 남학생 수는?`;expression=`(${facts.increase}-${N}*0.1)/0.1`;break;
    case 3:case 4:question=`${a}명의 평균 점수는 ${s1}점, 나머지 ${b}명의 평균은 ${s2}점이다. 전체 ${a+b}명의 평균은?`;expression=`(${a}*${s1}+${b}*${s2})/(${a}+${b})`;unit='점';break;
    case 5:facts.average=(a*s1+b*s2)/(a+b);question=`${a+b}명의 평균은 ${format(facts.average)}점이다. 그중 ${a}명의 평균이 ${s1}점이면 나머지 ${b}명의 평균은?`;expression=`(${facts.average}*(${a}+${b})-${a}*${s1})/${b}`;unit='점';break;
    case 6:facts.total=s1*a+s2;question=`${a+1}명의 점수 합계는 ${facts.total}점이다. 한 명을 제외한 ${a}명의 평균이 ${s1}점이라면 제외된 한 명의 점수는?`;expression=`${facts.total}-${a}*${s1}`;unit='점';break;
@@ -165,11 +150,7 @@ function generate(family:string,i:number,seed:number):Body {
    case 12:question=`빨간 공 ${red}개와 파란 공 ${blue}개에서 한 개씩 두 번, 돌려놓지 않고 뽑는다. 두 번 모두 빨간 공일 확률은?`;expression=`${red}/${n}*(${red}-1)/(${n}-1)`;unit='확률';break;
    case 13:question=`성공 확률이 각각 1/${a}, 1/${b}인 서로 독립인 두 시행이 모두 성공할 확률은?`;expression=`1/${a}*1/${b}`;unit='확률';break;
    // 분모가 (확률의 분모)^시행횟수라 메모장 계산 규모를 넘지 않도록 시행 수에 맞춰 범위를 정한다.
-   // 분모가 시행 횟수만큼 거듭제곱되므로 읽을 수 있는 크기로 묶는다.
-   case 14:{const trials=r(2,4),raw=r(3,trials===2?20:trials===3?10:5),top=r(1,raw-1),g=gcd(top,raw),num=top/g,den=raw/g;
-    facts.trials=trials;facts.den=den;facts.num=num;
-    question=`성공 확률이 ${num}/${den}인 독립 시행을 ${trials}회 할 때 적어도 한 번 성공할 확률은?`;
-    expression='1-'+Array(trials).fill(`(1-${num}/${den})`).join('*');unit='확률';}break;
+   case 14:facts.trials=r(2,4);facts.a=r(2,facts.trials===2?20:facts.trials===3?12:6);question=`성공 확률이 1/${facts.a}인 독립 시행을 ${facts.trials}회 할 때 적어도 한 번 성공할 확률은?`;expression='1-'+Array(facts.trials).fill(`(1-1/${facts.a})`).join('*');unit='확률';break;
    case 15:{let across=a+r(0,3),up=b+r(0,2);while(choose(across+up,across)>4000)across--;facts.a=across;facts.b=up;
     question=`격자에서 오른쪽 ${across}칸, 위 ${up}칸 떨어진 점까지 오른쪽 또는 위로만 한 칸씩 이동한다. 최단경로 수는?`;expression=chooseMemo(across+up,across);}break;
    // 경유점이 (2, 1)로 고정돼 있어 같은 구조만 반복됐다.

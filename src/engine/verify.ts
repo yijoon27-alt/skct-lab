@@ -14,8 +14,8 @@ function arrangements(n:number, predicate:(v:number[])=>boolean):number {
 }
 function paths(x:number,y:number):number {const dp=Array.from({length:x+1},()=>Array(y+1).fill(1));for(let a=1;a<=x;a++)for(let b=1;b<=y;b++)dp[a][b]=dp[a-1][b]+dp[a][b-1];return dp[x][y];}
 export function verifyAnswer(q:Question):boolean {
- if(q.subtype.startsWith('pat-'))return ['1.4.0','1.5.0','1.6.0'].includes(q.generatorVersion)&&verifyPattern(q);
- if(q.subtype.startsWith('bayes-')||q.subtype.startsWith('refseq-'))return ['1.2.0','1.3.0','1.4.0','1.5.0','1.6.0'].includes(q.generatorVersion)&&verifyReference(q);
+ if(q.subtype.startsWith('pat-'))return ['1.4.0','1.5.0','1.6.0','1.7.0'].includes(q.generatorVersion)&&verifyPattern(q);
+ if(q.subtype.startsWith('bayes-')||q.subtype.startsWith('refseq-'))return ['1.2.0','1.3.0','1.4.0','1.5.0','1.6.0','1.7.0'].includes(q.generatorVersion)&&verifyReference(q);
  const x=q.answer,f=q.facts,id=q.subtype.split('-')[0],i=Number(q.subtype.split('-')[1]);const eq=close;
  if(id==='speed'){
   const {slow:s,fast:v,t,dist:d,c,a,b}=f;
@@ -45,20 +45,20 @@ export function verifyAnswer(q:Question):boolean {
    case 9:return eq(x/f.b/f.c,f.a);case 10:return eq(x/A+f.completed/100,1);
   }
  }else if(id==='cost'){
-  const {cost:c,markup:m,discount:d,price:p,fixed:F,variable:v,count:n,fee}=f;
+  const {cost:c,markup:m,discount:d,price:p,fixed:F,variable:v,count:n,fee}=f,pay=f.pay??2;
   switch(i){case 0:return eq((x-c)/c,m/100);case 1:return eq((p-x)/p,d/100);case 2:return eq((x+c)/(c*(1+m/100)),1-d/100);
    case 3:return eq(x-x*d/100,p*(1-d/100));case 4:return eq(x,c*m/100-c*d/100);
    case 5:return eq(x+c*(1-f.b/100),p*(1-d/100));case 6:return eq(x/(1-f.b/100),p-p*d/100);
-   case 7:return eq(x/(1+f.b/100),c+c*d/100);case 8:return eq(x/f.bundles,c*2);case 9:return eq(x-c*100,c*d);
+   case 7:return eq(x/(1+f.b/100),c+c*d/100);case 8:return eq(x/f.bundles,c*pay);case 9:return eq(x-c*100,c*d);
    case 10:return eq(x+c+p*fee/100,p);case 11:return eq((x-F)/n,v);
    case 12:return Number.isInteger(x)&&x*(c-v)>=F&&(x-1)*(c-v)<F;
    case 13:return Number.isInteger(x)&&x>=0&&x<=f.n&&eq((f.n-x)*c+x*f.expensive,f.total);
    case 14:{const good=n*(1-f.defects/100);return Number.isInteger(x)&&x*good>=c*n&&(x-1)*good<c*n;}
   }
  }else if(id==='ratio'){
-  const {a,b,men,women,N,s1,s2}=f;
-  switch(i){case 0:return Number.isInteger(x)&&eq(x*b,(N-x)*a);case 1:return eq(x*women*1.1,men*1.2);
-   case 2:return Number.isInteger(x)&&eq(x*0.2+(N-x)*0.1,f.increase)&&x>=0&&x<=N;
+  const {a,b,men,women,N,s1,s2}=f,mRate=f.mRate??20,wRate=f.wRate??10;
+  switch(i){case 0:return Number.isInteger(x)&&eq(x*b,(N-x)*a);case 1:return eq(x*women*(100+wRate),men*(100+mRate));
+   case 2:return Number.isInteger(x)&&eq(x*mRate+(N-x)*wRate,f.increase*100)&&x>=0&&x<=N;
    case 3:case 4:return eq(x*(a+b),a*s1+b*s2);case 5:return eq(a*s1+b*x,f.average*(a+b));case 6:return eq(x+a*s1,f.total);
    case 7:return Number.isInteger(x)&&eq(f.per1*x+f.left,f.per2*x-f.short);
    case 8:case 9:return Number.isInteger(x)&&x>=0&&x<=f.n&&eq((f.n-x)*f.cheap+x*f.expensive,f.total);
@@ -80,7 +80,7 @@ export function verifyAnswer(q:Question):boolean {
    case 10:return eq(x,sets.filter(v=>v.some(v=>v<red)).length/sets.length);
    case 11:return eq(x,sets.filter(v=>v.filter(v=>v<red).length===1).length/sets.length);
    case 12:{let good=0,total=0;for(let p=0;p<n;p++)for(let v=0;v<n;v++)if(p!==v){total++;if(p<red&&v<red)good++;}return eq(x,good/total);}
-   case 13:return eq(x,1/(a*b));case 14:{let good=0,total=0;function event(j:number,success:boolean){if(j===f.trials){total++;if(success)good++;return;}for(let v=0;v<a;v++)event(j+1,success||v===0);}event(0,false);return eq(x,good/total);}
+   case 13:return eq(x,1/(a*b));case 14:{let good=0,total=0;function event(j:number,success:boolean){if(j===f.trials){total++;if(success)good++;return;}const den=f.den??a,num=f.num??1;for(let v=0;v<den;v++)event(j+1,success||v<num);}event(0,false);return eq(x,good/total);}
    case 15:return x===paths(a,b);case 16:return x===paths(f.x,f.y)*paths(a-f.x,b-f.y);
   }
  }else if(id==='seq'){
@@ -113,15 +113,15 @@ export function verifyAnswer(q:Question):boolean {
  return false;
 }
 // Saved questions keep the number rendering of the generator that produced them.
-const render=(q:Question)=>q.decimals!==undefined?(v:number)=>v.toFixed(q.decimals!):['1.3.0','1.4.0','1.5.0','1.6.0'].includes(q.generatorVersion)?format:legacyFormat;
+const render=(q:Question)=>q.decimals!==undefined?(v:number)=>v.toFixed(q.decimals!):['1.3.0','1.4.0','1.5.0','1.6.0','1.7.0'].includes(q.generatorVersion)?format:legacyFormat;
 export function verifyExplanation(q:Question):boolean {
  try{return q.steps.length>0&&q.steps.every(s=>close(calculate(s.expression),s.value))&&close(q.steps.at(-1)!.value,q.answer)&&q.explanation===q.steps.map(s=>`${s.label}: ${s.expression.replaceAll('*','×').replaceAll('/','÷')} = ${render(q)(s.value)}`).join('\n');}catch{return false;}
 }
 export function validate(q:Question):string[] {
  const errors:string[]=[];
  if(!q||typeof q.question!=='string'||!q.question.trim()||q.question.length>6000)return ['문항 구조 오류'];
- if(!Number.isInteger(q.seed)||q.seed<0||q.seed>4294967295||!['1.0.0','1.1.0','1.2.0','1.3.0','1.4.0','1.5.0','1.6.0'].includes(q.generatorVersion))errors.push('시드·버전 오류');
- if(q.id!==`${q.subtype}-${q.generatorVersion==='1.0.0'?'v1':q.generatorVersion==='1.1.0'?'v2':q.generatorVersion==='1.2.0'?'v3':q.generatorVersion==='1.3.0'?'v4':q.generatorVersion==='1.4.0'?'v5':q.generatorVersion==='1.5.0'?'v6':'v7'}-${q.seed}`)errors.push('문항 식별자 오류');
+ if(!Number.isInteger(q.seed)||q.seed<0||q.seed>4294967295||!['1.0.0','1.1.0','1.2.0','1.3.0','1.4.0','1.5.0','1.6.0','1.7.0'].includes(q.generatorVersion))errors.push('시드·버전 오류');
+ if(q.id!==`${q.subtype}-${q.generatorVersion==='1.0.0'?'v1':q.generatorVersion==='1.1.0'?'v2':q.generatorVersion==='1.2.0'?'v3':q.generatorVersion==='1.3.0'?'v4':q.generatorVersion==='1.4.0'?'v5':q.generatorVersion==='1.5.0'?'v6':q.generatorVersion==='1.6.0'?'v7':'v8'}-${q.seed}`)errors.push('문항 식별자 오류');
  if(!Number.isFinite(q.answer))errors.push('유한하지 않은 정답');
  if(q.options?.length!==5||q.optionValues?.length!==5||!Number.isInteger(q.correctAnswer)||q.correctAnswer<0||q.correctAnswer>4)errors.push('선지 구조 오류');
  else {
@@ -135,11 +135,11 @@ export function validate(q:Question):string[] {
  if(['명','개','가지','그루'].includes(q.unit)&&(!Number.isInteger(q.answer)||q.answer<0))errors.push('정수 조건 오류');
  // 금액은 1원 단위다. 11475/2원 같은 선지는 실제 시험에 나오지 않는다.
  // 부동소수 오차는 format이 이미 정수로 표시하므로 허용 오차를 둔다.
- if(q.unit==='원'&&['1.5.0','1.6.0'].includes(q.generatorVersion)&&Math.abs(q.answer-Math.round(q.answer))>1e-9)errors.push('금액 단위 오류');
+ if(q.unit==='원'&&['1.5.0','1.6.0','1.7.0'].includes(q.generatorVersion)&&Math.abs(q.answer-Math.round(q.answer))>1e-9)errors.push('금액 단위 오류');
  try{if(!verifyAnswer(q))errors.push('독립 조건 검산 실패');}catch{errors.push('검산 예외');}
  if(!verifyExplanation(q))errors.push('해설 계산 오류');
  // 유형과 해설 메타데이터의 일치, 그리고 문장의 조사까지 출제 전에 막는다.
  // 보존된 구버전 생성기는 당시 문장 그대로 재현해야 하므로 현행 버전에만 적용한다.
- const current=['1.3.0','1.4.0','1.5.0','1.6.0'].includes(q.generatorVersion)?particleErrors(q.question):[];
+ const current=['1.3.0','1.4.0','1.5.0','1.6.0','1.7.0'].includes(q.generatorVersion)?particleErrors(q.question):[];
  return [...errors,...calibrationErrors(q),...guidanceErrors(q),...current];
 }
