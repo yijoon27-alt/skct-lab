@@ -152,3 +152,28 @@ test('새 유형 문제은행·조건부 확률·두 도형 형식·집중훈련
   await page.getByRole('button',{name:'풀이 보기',exact:true}).click();await expect(page.locator('.explanation')).toBeVisible();
  }
 });
+test('유형별 공식 정리 · 검색·연습 연결·모바일',async({page})=>{
+ await page.getByRole('button',{name:'유형별 공식 정리',exact:true}).click();
+ await expect(page.locator('.tip-card')).toHaveCount(128);
+ await expect(page.getByRole('button',{name:'이 유형 연습하기'})).toHaveCount(80);
+ const search=page.getByRole('textbox',{name:'유형·공식 검색'});
+ // 문제 문장은 '용액'이라고 쓰지만 사람은 '소금물'로 찾는다.
+ await search.fill('소금물');
+ await expect(page.locator('.tip-card')).toHaveCount(11);
+ await expect(page.locator('.tip-head b').first()).toHaveText('서로 다른 용액 혼합');
+ await search.fill('기차');
+ await expect(page.locator('.tip-card')).toHaveCount(4);
+ await search.fill('존재하지않는낱말');
+ await expect(page.locator('.empty h3')).toBeVisible();
+ await search.fill('');
+ await page.getByRole('button',{name:'이 유형 연습하기'}).first().click();
+ const replace=page.getByRole('button',{name:'마치고 새로 시작',exact:true});if(await replace.isVisible())await replace.click();
+ await expect(page.locator('.question-text')).toBeVisible();
+ const subtypes=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).session.questions.map((q:{subtype:string})=>q.subtype),key);
+ expect(new Set(subtypes).size).toBe(1);
+ await page.setViewportSize({width:390,height:844});
+ await page.getByRole('button',{name:'메뉴 열기'}).click();
+ await page.getByRole('button',{name:'유형별 공식 정리',exact:true}).click();
+ await expect(page.locator('.tip-card').first()).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
