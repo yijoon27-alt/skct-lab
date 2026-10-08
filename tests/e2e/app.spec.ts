@@ -120,7 +120,9 @@ test('최신 유형 출제 구성·도형 보기·풀이·모바일·백업 복�
  await page.getByRole('button',{name:'수열추리',exact:false}).first().click();
  const replacement=page.getByRole('button',{name:'마치고 새로 시작',exact:true});if(await replacement.isVisible())await replacement.click();
  const snapshot=await page.evaluate(()=>JSON.parse(localStorage.getItem('skct-lab:v1')!));
- expect(snapshot.session.questions.filter((q:any)=>q.subtype.startsWith('refseq-'))).toHaveLength(13);
+ // 고정 목록이 아니라 분야 분포로 뽑으므로 유형 수가 아니라 중복 없음과 자료 기반 유형 비중을 본다.
+ expect(new Set(snapshot.session.questions.map((q:any)=>q.subtype)).size).toBe(20);
+ expect(snapshot.session.questions.filter((q:any)=>/^(refseq|pat)-/.test(q.subtype)).length).toBeGreaterThanOrEqual(8);
  const diagramIndex=snapshot.session.questions.findIndex((q:any)=>q.diagram);
  const q=snapshot.session.questions[diagramIndex];
  await page.getByRole('button',{name:`${diagramIndex+1}번 문제`,exact:true}).click();
@@ -154,8 +156,8 @@ test('새 유형 문제은행·조건부 확률·두 도형 형식·집중훈련
 });
 test('유형별 공식 정리 · 검색·연습 연결·모바일',async({page})=>{
  await page.getByRole('button',{name:'유형별 공식 정리',exact:true}).click();
- await expect(page.locator('.tip-card')).toHaveCount(128);
- await expect(page.getByRole('button',{name:'이 유형 연습하기'})).toHaveCount(80);
+ await expect(page.locator('.tip-card')).toHaveCount(138);
+ await expect(page.getByRole('button',{name:'이 유형 연습하기'})).toHaveCount(90);
  const search=page.getByRole('textbox',{name:'유형·공식 검색'});
  // 문제 문장은 '용액'이라고 쓰지만 사람은 '소금물'로 찾는다.
  await search.fill('소금물');

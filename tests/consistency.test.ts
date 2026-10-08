@@ -1,6 +1,6 @@
 import { describe,expect,it } from 'vitest';
 import { creativeTemplates } from '../src/engine/creative';
-import { templates,templateById,v12Templates,reproduce } from '../src/engine/bank';
+import { templates,templateById,v12Templates,v13Templates,reproduce } from '../src/engine/bank';
 import { creativeGuidance,guidanceErrors,applyGuidance } from '../src/engine/guidance';
 import { validate } from '../src/engine/verify';
 import { eul,particleErrors,ro,wa } from '../src/engine/korean';
@@ -11,7 +11,7 @@ describe('유형 = 핵심 공식 = 인식 신호 = 최단풀이',()=>{
  it('창의수리 86개 유형이 빠짐없이, 그리고 그만큼만 해설 표에 등록',()=>{
   expect([...Object.keys(creativeGuidance)].sort()).toEqual(creativeTemplates.map(t=>t.id).sort());
  });
- it('128개 유형 × 50시드의 해설 메타데이터·문장 조사·문항 분류가 유형과 일치',()=>{
+ it('138개 유형 × 50시드의 해설 메타데이터·문장 조사·문항 분류가 유형과 일치',()=>{
   for(const t of templates)for(let s=1;s<=50;s++){
    const q=t.generate(s*4099);
    expect(guidanceErrors(q),q.id).toEqual([]);
@@ -86,4 +86,13 @@ it('1.2.0 생성기 128개를 그대로 보존해 과거 기록을 재현',()=>{
   expect(reproduce(q)).toEqual(q);
  }
  expect(applyGuidance(templateById('ratio-12')!.generate(7919))).toEqual(templateById('ratio-12')!.generate(7919));
+});
+it('1.3.0 생성기 128개를 그대로 보존해 과거 기록을 재현',()=>{
+ expect(v13Templates).toHaveLength(128);
+ for(const t of v13Templates)for(let seed=1;seed<=5;seed++){
+  const q=t.generate(seed*179);
+  expect(q.generatorVersion,q.id).toBe('1.3.0');
+  expect(validate(q),q.id).toEqual([]);
+  expect(reproduce(q)).toEqual(q);
+ }
 });

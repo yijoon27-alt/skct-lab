@@ -6,7 +6,7 @@ export interface Question {
  question: string; options: string[]; optionValues: number[]; correctAnswer: number;
  answer: number; unit: string; explanation: string; shortcut: string; memo: string;
  keyFormula: string; signal: string; steps: Step[]; seed: number; generatorVersion: string;
- facts: Record<string, number>; sequence?: number[]; rule?: string; diagram?: {kind: 'grid'|'cross'; cells: (number|null)[][]};
+ facts: Record<string, number>; sequence?: number[]; rule?: string; decimals?: number; diagram?: {kind: 'grid'|'cross'; cells: (number|null)[][]};
 }
 export interface Template { id: string; name: string; category: string; area: Area; difficulty: Difficulty; complexity: string; generate: (seed: number) => Question }
 export type Mode = 'card' | 'exam';

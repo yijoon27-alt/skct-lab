@@ -1,5 +1,6 @@
 import { calculate, close, format, legacyFormat } from './math';
 import { verifyReference } from './referenceVerify';
+import { verifyPattern } from './patternVerify';
 import { calibrationErrors } from './calibration';
 import { guidanceErrors } from './guidance';
 import { particleErrors } from './korean';
@@ -13,7 +14,8 @@ function arrangements(n:number, predicate:(v:number[])=>boolean):number {
 }
 function paths(x:number,y:number):number {const dp=Array.from({length:x+1},()=>Array(y+1).fill(1));for(let a=1;a<=x;a++)for(let b=1;b<=y;b++)dp[a][b]=dp[a-1][b]+dp[a][b-1];return dp[x][y];}
 export function verifyAnswer(q:Question):boolean {
- if(q.subtype.startsWith('bayes-')||q.subtype.startsWith('refseq-'))return ['1.2.0','1.3.0'].includes(q.generatorVersion)&&verifyReference(q);
+ if(q.subtype.startsWith('pat-'))return q.generatorVersion==='1.4.0'&&verifyPattern(q);
+ if(q.subtype.startsWith('bayes-')||q.subtype.startsWith('refseq-'))return ['1.2.0','1.3.0','1.4.0'].includes(q.generatorVersion)&&verifyReference(q);
  const x=q.answer,f=q.facts,id=q.subtype.split('-')[0],i=Number(q.subtype.split('-')[1]);const eq=close;
  if(id==='speed'){
   const {slow:s,fast:v,t,dist:d,c,a,b}=f;
@@ -111,15 +113,15 @@ export function verifyAnswer(q:Question):boolean {
  return false;
 }
 // Saved questions keep the number rendering of the generator that produced them.
-const render=(q:Question)=>q.generatorVersion==='1.3.0'?format:legacyFormat;
+const render=(q:Question)=>q.decimals!==undefined?(v:number)=>v.toFixed(q.decimals!):['1.3.0','1.4.0'].includes(q.generatorVersion)?format:legacyFormat;
 export function verifyExplanation(q:Question):boolean {
  try{return q.steps.length>0&&q.steps.every(s=>close(calculate(s.expression),s.value))&&close(q.steps.at(-1)!.value,q.answer)&&q.explanation===q.steps.map(s=>`${s.label}: ${s.expression.replaceAll('*','×').replaceAll('/','÷')} = ${render(q)(s.value)}`).join('\n');}catch{return false;}
 }
 export function validate(q:Question):string[] {
  const errors:string[]=[];
  if(!q||typeof q.question!=='string'||!q.question.trim()||q.question.length>6000)return ['문항 구조 오류'];
- if(!Number.isInteger(q.seed)||q.seed<0||q.seed>4294967295||!['1.0.0','1.1.0','1.2.0','1.3.0'].includes(q.generatorVersion))errors.push('시드·버전 오류');
- if(q.id!==`${q.subtype}-${q.generatorVersion==='1.0.0'?'v1':q.generatorVersion==='1.1.0'?'v2':q.generatorVersion==='1.2.0'?'v3':'v4'}-${q.seed}`)errors.push('문항 식별자 오류');
+ if(!Number.isInteger(q.seed)||q.seed<0||q.seed>4294967295||!['1.0.0','1.1.0','1.2.0','1.3.0','1.4.0'].includes(q.generatorVersion))errors.push('시드·버전 오류');
+ if(q.id!==`${q.subtype}-${q.generatorVersion==='1.0.0'?'v1':q.generatorVersion==='1.1.0'?'v2':q.generatorVersion==='1.2.0'?'v3':q.generatorVersion==='1.3.0'?'v4':'v5'}-${q.seed}`)errors.push('문항 식별자 오류');
  if(!Number.isFinite(q.answer))errors.push('유한하지 않은 정답');
  if(q.options?.length!==5||q.optionValues?.length!==5||!Number.isInteger(q.correctAnswer)||q.correctAnswer<0||q.correctAnswer>4)errors.push('선지 구조 오류');
  else {
@@ -135,6 +137,6 @@ export function validate(q:Question):string[] {
  if(!verifyExplanation(q))errors.push('해설 계산 오류');
  // 유형과 해설 메타데이터의 일치, 그리고 문장의 조사까지 출제 전에 막는다.
  // 보존된 구버전 생성기는 당시 문장 그대로 재현해야 하므로 현행 버전에만 적용한다.
- const current=q.generatorVersion==='1.3.0'?particleErrors(q.question):[];
+ const current=['1.3.0','1.4.0'].includes(q.generatorVersion)?particleErrors(q.question):[];
  return [...errors,...calibrationErrors(q),...guidanceErrors(q),...current];
 }

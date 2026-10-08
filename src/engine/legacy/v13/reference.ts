@@ -1,8 +1,8 @@
 // Independently authored rules inspired by the aggregate review, never source questions.
 import { build } from './build';
-import { calculate, format, rng } from './math';
-import { ro } from './korean';
-import type { Template, Step, Question } from './types';
+import { calculate, format, rng } from '../../math';
+import { ro } from '../../korean';
+import type { Template, Step, Question } from '../../types';
 
 const probabilityNames=['조건부 확률 · 생산 출처','조건부 확률 · 검사 결과','조건부 확률 · 집단 선택'];
 export const probabilityTemplates:Template[]=probabilityNames.map((name,i)=>({
@@ -58,7 +58,6 @@ function display(v:number,j:number,style:number){
  if(style===2&&j%2&&v>1&&!Number.isInteger(v))return `${Math.floor(v)} ${format(v-Math.floor(v))}`;
  return format(v);
 }
-export { query };
 export const referenceSequenceTemplates:Template[]=specs.map(([name,difficulty,complexity],i)=>({
  id:`refseq-${i}`,name,category:name,area:'sequence',difficulty,complexity,
  generate(seed){
@@ -98,7 +97,7 @@ export const referenceSequenceTemplates:Template[]=specs.map(([name,difficulty,c
   const prompt=shown.map((v,j)=>q.kind!==3&&j===q.A?'(A)':[1,2,4,5].includes(q.kind)&&j===q.B?'(B)':i===2?`${a+b*j*(j+1)/2}/${c+d*j}`:i===4?v.toFixed(2):display(v,j,[0,1,12,13].includes(i)?Math.max(1,style):style));
   const steps=terms.map((value,j)=>({label:`${j+1}번째 항`,expression:expressions[j],value}));steps.push({label:q.instruction,expression:q.expression,value:q.answer});
   const expressionsAreMixed=prompt.some(value=>/\d+ \d+\/\d+/.test(value));
-  return build(`refseq-${i}`,name,'sequence',difficulty,seed,{question:`${prompt.join(', ')}${q.kind===3?', …':''}\n${q.instruction}${expressionsAreMixed?'\n※ 정수와 분수를 띄어 쓴 값은 대분수입니다.':''}`,answer:q.answer,unit:'',facts:{a,b,c,d,den,style,queryKind:q.kind,indexA:q.A,indexB:q.B},sequence:terms,rule,formula,signal:name,decimals:i===4?2:undefined,
+  return build(`refseq-${i}`,name,'sequence',difficulty,seed,{question:`${prompt.join(', ')}${q.kind===3?', …':''}\n${q.instruction}${expressionsAreMixed?'\n※ 정수와 분수를 띄어 쓴 값은 대분수입니다.':''}`,answer:q.answer,unit:'',facts:{a,b,c,d,den,style,queryKind:q.kind,indexA:q.A,indexB:q.B},sequence:terms,rule,formula,signal:name,
    shortcut:`${formula}. ${q.kind===4?'A와 B를 구한 뒤 곱합니다.':q.kind===5?'A를 B로 나눕니다.':'목표 항만 복원하고 질문에서 요구한 연산을 적용합니다.'}`,steps,memo:q.expression});
  }
 }));

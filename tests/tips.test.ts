@@ -6,7 +6,7 @@ import { emptyStore } from '../src/engine/storage';
 import { createSession,grade } from '../src/engine/session';
 describe('유형별 공식 정리',()=>{
  const all=tipGroups().flatMap(g=>g.tips);
- it('128개 유형이 중복 없이 한 번씩만 실린다',()=>{
+ it('138개 유형이 중복 없이 한 번씩만 실린다',()=>{
   expect(all.map(t=>t.id).sort()).toEqual(templates.map(t=>t.id).sort());
  });
  it('공식·신호·최단풀이가 빈 칸 없이 채워져 있고 분류가 템플릿과 일치',()=>{
@@ -38,7 +38,7 @@ describe('유형별 공식 정리',()=>{
 });
 it('연습 가능한 유형으로 표시된 것은 실제로 그 유형만 출제된다',()=>{
  const pool=tipGroups().flatMap(g=>g.tips).filter(t=>t.inPool);
- expect(pool).toHaveLength(80);
+ expect(pool).toHaveLength(90);
  for(const t of [pool[0],pool[Math.floor(pool.length/2)],pool.at(-1)!]){
   const qs=makeSet({area:t.area,subtypes:[t.id],seed:31676,count:3});
   expect(qs.every(q=>q.subtype===t.id),t.id).toBe(true);
