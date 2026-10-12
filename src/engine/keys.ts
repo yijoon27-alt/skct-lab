@@ -9,12 +9,20 @@ const NUMPAD: Record<string,string> = {
  NumpadParenLeft:'(',NumpadParenRight:')',
  NumpadEnter:'=',NumpadEqual:'=',NumpadBackspace:'⌫',
 };
-export function numpadKey(code: string,key: string): string {
+// 표에 없는 코드를 쓰는 넘패드도 받기 위한 2차 경로. e.key에 실린 문자를 그대로 쓴다.
+const FROM_KEY: Record<string,string> = {Enter:'=',Clear:'C',Backspace:'⌫',',':'.','×':'*','÷':'/','−':'-'};
+// code, key, location 세 가지를 모두 본다. location 3은 표준이 정한 '넘패드 자리'이므로
+// 제조사가 어떤 코드 이름을 보내든 넘패드에서 온 키인지 알 수 있다.
+export function numpadKey(code: string,key: string,location?: number): string {
  const mapped=NUMPAD[code];
  if(mapped)return mapped;
- // 애플 정품 키패드의 Clear는 code가 'NumLock'이고 key가 'Clear'다.
- // NumLock이 꺼진 일반 넘패드의 5도 e.key가 'Clear'이므로 code 조회를 먼저 해야 한다.
- if(key==='Clear')return 'C';
+ const onPad=location===3||code.startsWith('Numpad');
+ // 애플 정품 키패드의 Clear는 code가 'NumLock'이다. NumLock이 꺼진 일반 넘패드의 5도
+ // e.key가 'Clear'이므로, 위의 code 조회가 반드시 먼저 끝난 뒤에 이 줄에 닿아야 한다.
+ if(!onPad)return key==='Clear'?'C':'';
+ if(key==='NumLock')return '';
+ if(FROM_KEY[key])return FROM_KEY[key];
+ if(key.length===1&&'0123456789.+-*/()='.includes(key))return key;
  return '';
 }
 // 넘패드 숫자키인데 e.key가 그 숫자가 아니면 NumLock이 꺼진 상태다.
