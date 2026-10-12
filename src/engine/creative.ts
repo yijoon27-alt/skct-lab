@@ -104,16 +104,21 @@ function generate(family:string,i:number,seed:number):Body {
  } else if(family==='work') {
   const A=a*4,B=b*6,C=c*8,early=r(1,4),eff=i===6?r(10,18)*5:i===7?r(12,19)*5:r(11,19)*10;
   facts={A,B,C,early,eff,units:c*100};unit='시간';
+  // 전체 일을 1이 아니라 단독 시간의 최소공배수로 놓으면 시간당 작업량이 정수가 되어
+  // 분수 덧셈이 사라진다. 정답 계산식(expression)은 정석 그대로 두고 메모식만 바꾼다.
+  const lcm=(x:number,y:number)=>x*y/gcd(x,y);
+  const whole2=lcm(A,B),whole3=lcm(whole2,C);
+  const perHour=(w:number,h:number)=>w/h;
   switch(i){
-   case 0:question=`동일한 일을 A는 ${A}시간, B는 ${B}시간에 혼자 마친다. 두 사람이 일정한 효율로 함께 하면 완료까지 시간은?`;expression=`1/(1/${A}+1/${B})`;break;
-   case 1:question=`한 일을 혼자 마치는 데 A는 ${A}시간, B는 ${B}시간, C는 ${C}시간이 걸린다. 세 사람의 일률이 더해질 때 공동 작업 시간은?`;expression=`1/(1/${A}+1/${B}+1/${C})`;break;
-   case 2:question=`A 혼자 ${A}시간, B 혼자 ${B}시간이 필요한 일에서 A가 먼저 ${early}시간 일한 뒤 B가 합류한다. 합류 후 남은 시간은?`;expression=`(1-${early}/${A})/(1/${A}+1/${B})`;break;
-   case 3:question=`A와 B의 단독 완료 시간은 각각 ${A}, ${B}시간이다. 함께 ${early}시간 작업한 뒤 B가 떠났다. 이후 A가 일을 마치는 데 필요한 시간은?`;expression=`(1-${early}*(1/${A}+1/${B}))*${A}`;break;
-   case 4:question=`단독 완료 시간이 ${A}, ${B}, ${C}시간인 A, B, C 중 A와 B가 먼저 ${early}시간 작업하고 C가 합류했다. 합류 후 남은 시간은?`;expression=`(1-${early}*(1/${A}+1/${B}))/(1/${A}+1/${B}+1/${C})`;break;
+   case 0:question=`동일한 일을 A는 ${A}시간, B는 ${B}시간에 혼자 마친다. 두 사람이 일정한 효율로 함께 하면 완료까지 시간은?`;expression=`1/(1/${A}+1/${B})`;memo=`${whole2}/(${perHour(whole2,A)}+${perHour(whole2,B)})`;break;
+   case 1:question=`한 일을 혼자 마치는 데 A는 ${A}시간, B는 ${B}시간, C는 ${C}시간이 걸린다. 세 사람의 일률이 더해질 때 공동 작업 시간은?`;expression=`1/(1/${A}+1/${B}+1/${C})`;memo=`${whole3}/(${perHour(whole3,A)}+${perHour(whole3,B)}+${perHour(whole3,C)})`;break;
+   case 2:question=`A 혼자 ${A}시간, B 혼자 ${B}시간이 필요한 일에서 A가 먼저 ${early}시간 일한 뒤 B가 합류한다. 합류 후 남은 시간은?`;expression=`(1-${early}/${A})/(1/${A}+1/${B})`;memo=`(${whole2}-${early}*${perHour(whole2,A)})/(${perHour(whole2,A)}+${perHour(whole2,B)})`;break;
+   case 3:question=`A와 B의 단독 완료 시간은 각각 ${A}, ${B}시간이다. 함께 ${early}시간 작업한 뒤 B가 떠났다. 이후 A가 일을 마치는 데 필요한 시간은?`;expression=`(1-${early}*(1/${A}+1/${B}))*${A}`;memo=`(${whole2}-${early}*(${perHour(whole2,A)}+${perHour(whole2,B)}))/${perHour(whole2,A)}`;break;
+   case 4:question=`단독 완료 시간이 ${A}, ${B}, ${C}시간인 A, B, C 중 A와 B가 먼저 ${early}시간 작업하고 C가 합류했다. 합류 후 남은 시간은?`;expression=`(1-${early}*(1/${A}+1/${B}))/(1/${A}+1/${B}+1/${C})`;memo=`(${whole3}-${early}*(${perHour(whole3,A)}+${perHour(whole3,B)}))/(${perHour(whole3,A)}+${perHour(whole3,B)}+${perHour(whole3,C)})`;break;
    case 5:case 6:question=`A가 평소 혼자 ${A}시간에 마치는 일을, 처음부터 평소의 ${eff}% 일률로 작업한다. 완료 시간은?`;expression=`${A}/(${eff}/100)`;break;
-   case 7:case 8:facts.dist=c;question=`A와 B의 단독 완료 시간은 ${A}, ${B}시간이다. A가 먼저 ${early}시간 작업한 뒤 B가 합류한다. 함께 작업할 때 전체 일률은 두 단독 일률 합의 ${eff}%가 된다. 합류 후 남은 시간은?`;expression=`(1-${early}/${A})/((1/${A}+1/${B})*${eff}/100)`;break;
+   case 7:case 8:facts.dist=c;question=`A와 B의 단독 완료 시간은 ${A}, ${B}시간이다. A가 먼저 ${early}시간 작업한 뒤 B가 합류한다. 함께 작업할 때 전체 일률은 두 단독 일률 합의 ${eff}%가 된다. 합류 후 남은 시간은?`;expression=`(1-${early}/${A})/((1/${A}+1/${B})*${eff}/100)`;memo=`(${whole2}-${early}*${perHour(whole2,A)})/((${perHour(whole2,A)}+${perHour(whole2,B)})*${eff}/100)`;break;
    case 9:question=`한 설비가 시간당 ${a}개를 생산한다. ${b}대가 같은 효율로 ${c}시간 가동했다면 전체 생산량은?`;expression=`${a}*${b}*${c}`;facts={a,b,c};unit='개';break;
-   default:question=`A가 혼자 ${A}시간에 하는 일의 ${c*10}%가 이미 끝났다. 남은 일을 A 혼자 마치는 시간은?`;expression=`${A}*(1-${c*10}/100)`;facts.completed=c*10;
+   default:question=`A가 혼자 ${A}시간에 하는 일의 ${c*10}%가 이미 끝났다. 남은 일을 A 혼자 마치는 시간은?`;expression=`${A}*(1-${c*10}/100)`;memo=`${A}*${100-c*10}/100`;facts.completed=c*10;
   }
  } else if(family==='cost') {
   const cost=a*1000,markup=r(2,9)*10,discount=b*5,price=cost*(1+markup/100),fixed=c*10000,variable=b*100,count=r(2,10)*100,fee=r(1,4)*5;

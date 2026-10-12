@@ -39,6 +39,25 @@ describe('조건이 맞는 문항에만 변형 최단풀이를 붙인다',()=>{
  });
 });
 
+describe('메모장 최소 계산식은 실제로 정답이 나오는 식이어야 한다',()=>{
+ // 최단풀이 설명과 메모식이 어긋나면 사용자가 둘 중 어느 쪽을 믿어야 할지 알 수 없다.
+ // 올림·버림이 필요한 네 유형만 예외다. 메모식은 반올림 전 나눗셈을 보여주고,
+ // 각 유형의 최단풀이가 마지막에 올리거나 버리라고 적는다.
+ const rounding=new Set(['cost-12','cost-14','ratio-10','ratio-11']);
+ for(const t of templates.filter(t=>t.area==='creative'&&!rounding.has(t.id)))
+  it(`${t.id} ${t.name}`,()=>{
+   for(let s=1;s<=120;s++){const q=t.generate(s*7919);
+    expect(close(calculate(q.memo),q.answer),`${q.id} 메모식 ${q.memo} → 정답 ${q.answer}`).toBe(true);}
+  });
+ it('올림·버림 유형은 메모식이 반올림 전 값이고 최단풀이가 그 처리를 적는다',()=>{
+  for(const id of rounding){
+   const q=templateById(id)!.generate(7919);
+   expect(/올림|버림|버립니다/.test(q.shortcut),`${id} 최단풀이에 올림·버림 안내 없음`).toBe(true);
+   expect(()=>calculate(q.memo),`${id} 메모식`).not.toThrow();
+  }
+ });
+});
+
 describe('1.8.0으로 올린 뒤에도 1.7.0 기록을 그대로 재현',()=>{
  it('v17 생성기가 1.7.0 문항을 바이트 단위로 되살린다',()=>{
   for(const t of v17Templates)for(let seed=1;seed<=3;seed++){
