@@ -60,7 +60,7 @@ it('생성기 1.1.0의 555개와 3버전 혼합 기록 재현',()=>{
  for(const t of v11Templates)for(let seed=1;seed<=5;seed++){const q=t.generate(seed*179);expect(validate(q),q.id).toEqual([]);expect(reproduce(q)).toEqual(q);}
  let store=emptyStore();const old=v11Templates.find(t=>t.id==='seq-16')!.generate(179);store.session=createSession([old],'sequence','card');store=grade(store,store.session,0,old.correctAnswer);
  store.session=createSession(makeSet({area:'sequence',seed:7}),'sequence','card');expect(parseBackup(JSON.stringify(store))).toEqual(store);
- expect(practiceTemplates).toHaveLength(90);expect(templates).toHaveLength(138);
+ expect(practiceTemplates).toHaveLength(93);expect(templates).toHaveLength(141);
 });
 
 it('화면 수열의 분수·대분수·소수 표기가 실제 검산 항과 일치',()=>{

@@ -4,24 +4,30 @@ import type { Question } from './types';
 // so all 16 'ratio' topics shared one average/unit-price explanation. Keying every template
 // explicitly — and letting verify.ts compare against this same table — makes that impossible.
 // No generator imports here: verify.ts must stay independent of how a question is constructed.
-export interface Guidance { formula:string; signal:string; method:string }
+// method는 그 유형의 어떤 문항에서도 통하는 풀이다. methods는 조건이 맞는 문항에서만 더 빠른
+// 변형으로, 생성기가 조건을 확인한 문항에만 붙인다. 조건이 아닌데 변형을 보여주면 오히려 돌아간다.
+export interface Guidance { formula:string; signal:string; method:string; methods?:string[] }
+export const allowedMethods=(g:Guidance):string[]=>[g.method,...(g.methods??[])];
 export const creativeGuidance:Record<string,Guidance>={
  // speed
  'speed-0':{formula:'거리 = 속력 × 시간',signal:'한 가지 속력으로 일정하게 이동한 거리·시간·속력 중 하나만 비어 있는 표현',method:'분을 시간으로 바꾼 뒤 속력에 한 번만 곱합니다.'},
- 'speed-1':{formula:'왕복 시간 = 편도거리 ÷ 갈 때 속력 + 편도거리 ÷ 올 때 속력',signal:'같은 거리를 서로 다른 속력으로 오간다는 표현',method:'구간마다 시간을 따로 구해 더합니다. 두 속력의 산술평균을 쓰지 않습니다.'},
+ 'speed-1':{formula:'왕복 시간 = 편도거리 ÷ 갈 때 속력 + 편도거리 ÷ 올 때 속력',signal:'같은 거리를 서로 다른 속력으로 오간다는 표현',method:'구간마다 시간을 따로 구해 더합니다. 산술평균은 틀리고, 조화평균은 평균 속력을 물을 때만 씁니다. 역비는 시간의 비를 물을 때만 씁니다.'},
  'speed-2':{formula:'같은 거리에서 시간의 비 = 속력의 비의 역비',signal:'거리가 같고 속력의 비만 주어진 표현',method:'속력의 비를 뒤집어 시간의 비로 쓰고 알려진 시간에 곱합니다.'},
- 'speed-3':{formula:'거리 = 시간차 ÷ (1 ÷ 느린 속력 − 1 ÷ 빠른 속력)',signal:'같은 구간을 두 속력으로 갈 때 도착 시각이 벌어진다는 표현',method:'시간차를 시간 단위로 바꾸고 두 소요시간의 차로 나눕니다.'},
+ 'speed-3':{formula:'시간비 = 속력비의 역비 · 거리 = 느린 속력 × 느린 쪽 시간 = 시간차 × 두 속력의 곱 ÷ 속력차',signal:'같은 구간을 두 속력으로 갈 때 도착 시각이 벌어진다는 표현',method:'시간차에 두 속력의 곱을 곱하고 속력차로 나눕니다. 분은 60으로 나눠 시간으로 맞춥니다.',methods:['속력비를 약분해 뒤집으면 그대로 시간비이고, 두 수의 차가 곧 주어진 시간차입니다. 한 칸이 몇 분인지 구해 느린 쪽 시간을 얻고 느린 속력에 곱합니다.']},
  'speed-4':{formula:'만나는 시간 = 두 지점 사이 거리 ÷ 속력의 합',signal:'서로를 향해 동시에 출발해 만난다는 표현',method:'속력을 더해 한 덩어리로 보고 거리를 나눕니다.'},
  'speed-5':{formula:'따라잡는 시간 = 앞선 거리 ÷ 속력의 차',signal:'같은 방향으로 가며 뒤차가 앞차를 따라잡는다는 표현',method:'속력의 차로 벌어진 거리를 나눕니다.'},
  'speed-6':{formula:'따라잡는 시간 = 선출발로 벌어진 거리 ÷ 속력의 차',signal:'한쪽이 먼저 출발한 뒤 나중 출발자가 따라붙는다는 표현',method:'선출발 시간을 분으로 유지하면 60 변환이 약분됩니다. 선두 속력 × 선출발 시간 ÷ 속력의 차를 입력합니다.'},
  'speed-7':{formula:'총 시간 = 2 × (선출발로 벌어진 거리 ÷ 속력의 차)',signal:'따라잡은 즉시 같은 속력으로 출발점까지 되돌아온다는 표현',method:'따라잡는 시간을 구한 뒤 2배 합니다. 돌아오는 거리와 속력이 같기 때문입니다.'},
  'speed-8':{formula:'처음 만나는 시간 = 트랙 둘레 ÷ 속력의 합',signal:'원형 트랙에서 반대 방향으로 돌다 다시 만난다는 표현',method:'트랙 한 바퀴를 거리로 보고 속력의 합으로 나눕니다.'},
  'speed-9':{formula:'한 바퀴 앞서는 시간 = 트랙 둘레 ÷ 속력의 차',signal:'원형 트랙에서 같은 방향으로 돌다 한 바퀴 차이가 난다는 표현',method:'한 바퀴만큼 앞서야 하므로 둘레를 속력의 차로 나눕니다.'},
- 'speed-10':{formula:'완전히 지나는 거리 = 두 기차의 길이 합',signal:'앞부분이 만난 순간부터 완전히 지나칠 때까지라는 표현',method:'두 길이를 더해 거리로 쓰고 마주 달리므로 속력을 더해 나눕니다.'},
- 'speed-11':{formula:'통과 거리 = 기차 길이 + 터널 길이',signal:'앞부분 진입부터 뒷부분 이탈까지라는 표현',method:'기차 길이를 반드시 더하고 시속을 3.6으로 나눠 초속으로 맞춥니다.'},
- 'speed-12':{formula:'통과 거리 = 기차 길이 + 다리 길이',signal:'앞부분 진입부터 뒷부분 이탈까지라는 표현',method:'다리 길이에 기차 길이를 반드시 더하고 시속을 3.6으로 나눠 초속으로 맞춥니다.'},
+ 'speed-10':{formula:'완전히 지나는 거리 = 두 기차의 길이 합',signal:'앞부분이 만난 순간부터 완전히 지나칠 때까지라는 표현',method:'길이는 방향과 상관없이 항상 더합니다. 속력만 방향을 따라, 마주 달리면 더하고 같은 방향이면 뺍니다. 여기서는 마주 달리므로 길이의 합을 속력의 합으로 나눕니다.'},
+ 'speed-11':{formula:'통과 거리 = 기차 길이 + 터널 길이',signal:'앞부분 진입부터 뒷부분 이탈까지라는 표현',method:'완전히 빠져나가는 것이므로 기차 길이를 반드시 더합니다. 기차가 안에 완전히 가려져 있는 시간을 묻는 문제는 반대로 빼야 하므로 질문을 끝까지 읽습니다. 시속은 3.6으로 나눠 초속으로 맞춥니다.'},
+ 'speed-12':{formula:'통과 거리 = 기차 길이 + 다리 길이',signal:'앞부분 진입부터 뒷부분 이탈까지라는 표현',method:'다리 길이에 기차 길이를 반드시 더합니다. 다리는 가려지는 구간이 없으므로 더하기만 쓰며, 뒷부분이 빠져나갈 때까지가 통과입니다. 시속은 3.6으로 나눠 초속으로 맞춥니다.'},
  'speed-13':{formula:'거슬러 갈 때 = 배의 속력 − 유속, 따라 갈 때 = 배의 속력 + 유속',signal:'강을 거슬러 올라갔다 내려오는 왕복 표현',method:'올라갈 때와 내려올 때 시간을 따로 구해 더합니다. 유속은 더하고 빼기만 합니다.'},
  'speed-14':{formula:'통과 거리 = 지나가는 영역의 길이 + 구간의 폭',signal:'맨 앞 진입부터 맨 뒤 이탈까지라는 표현',method:'두 길이를 더해 거리로 쓰고 속력으로 나눕니다.'},
+ 'speed-16':{formula:'한 지점 통과 거리 = 기차 길이 (지점의 길이는 0)',signal:'전봇대·신호등처럼 길이가 없는 한 지점을 지난다는 표현',method:'지점은 길이가 없으므로 더할 것이 없습니다. 기차 길이만 거리로 쓰고 시속을 3.6으로 나눈 초속으로 나눕니다.'},
+ 'speed-17':{formula:'완전히 가려져 있는 거리 = 터널 길이 − 기차 길이',signal:'기차 전체가 터널 안에 들어가 있는 동안을 묻는 표현',method:'완전히 빠져나가는 문제와 부호가 반대입니다. 터널에서 기차 길이를 빼고 초속으로 나눕니다. 터널이 더 길어야 가려지는 구간이 생깁니다.'},
+ 'speed-18':{formula:'왕복 평균 속력 = 2 × 갈 때 속력 × 올 때 속력 ÷ 두 속력의 합',signal:'같은 길을 서로 다른 속력으로 왕복한 뒤 전체 평균 속력을 묻는 표현',method:'두 속력을 더해 2로 나누면 틀립니다. 곱을 2배 해서 합으로 나누는 조화평균을 씁니다. 거리를 두 속력의 곱으로 놓으면 시간이 정수가 되어 검산이 빠릅니다.'},
  'speed-15':{formula:'거리 = 속력 × 시간, 단위 변환은 마지막에',signal:'시속과 초, km와 m처럼 단위가 섞여 있는 표현',method:'먼저 같은 단위로 맞춘 뒤 한 번만 곱합니다.'},
  // mix
  'mix-0':{formula:'혼합 농도 = 용질량의 합 ÷ 용액량의 합 × 100',signal:'서로 다른 농도의 두 용액을 섞는다는 표현',method:'각 용액의 용질량을 먼저 구해 더하고 질량의 합으로 나눕니다.'},
@@ -119,12 +125,13 @@ export function foreignTerms(subtype:string):string[]{return foreign.find(([p])=
 export function applyGuidance<T extends {subtype?:string;memo?:string;keyFormula?:string;signal?:string;shortcut?:string}>(q:T):T{
  const guide=q&&typeof q==='object'?creativeGuidance[String(q.subtype)]:undefined;
  if(!guide||typeof q.memo!=='string')return q;
- q.keyFormula=guide.formula;q.signal=guide.signal;q.shortcut=`${guide.method} 메모장 계산식: ${q.memo}`;
+ q.keyFormula=guide.formula;q.signal=guide.signal;
+ if(!allowedMethods(guide).some(m=>q.shortcut?.startsWith(m)))q.shortcut=`${guide.method} 메모장 계산식: ${q.memo}`;
  return q;
 }
 // 유형 = 핵심 공식 = 인식 신호 = 최단풀이 네 가지가 같은 유형을 가리키는지 확인한다.
 export function guidanceErrors(q:Question):string[]{
- if(!['1.3.0','1.4.0','1.5.0','1.6.0','1.7.0'].includes(q.generatorVersion))return [];
+ if(!['1.3.0','1.4.0','1.5.0','1.6.0','1.7.0','1.8.0'].includes(q.generatorVersion))return [];
  const errors:string[]=[];
  const fields:[string,string][]=[['핵심 공식',q.keyFormula],['인식 신호',q.signal],['최단풀이',q.shortcut],['메모장 식',q.memo]];
  for(const [label,value] of fields)if(typeof value!=='string'||!value.trim())errors.push(`${label} 누락`);
@@ -133,7 +140,7 @@ export function guidanceErrors(q:Question):string[]{
  if(guide){
   if(q.keyFormula!==guide.formula)errors.push('유형과 핵심 공식 불일치');
   if(q.signal!==guide.signal)errors.push('유형과 인식 신호 불일치');
-  if(!q.shortcut.startsWith(guide.method))errors.push('유형과 최단풀이 불일치');
+  if(!allowedMethods(guide).some(m=>q.shortcut.startsWith(m)))errors.push('유형과 최단풀이 불일치');
  } else if(q.type==='creative'&&!q.subtype.startsWith('bayes-'))errors.push('등록되지 않은 창의수리 유형');
  const prose=`${q.keyFormula} ${q.signal} ${q.shortcut}`;
  for(const term of foreignTerms(q.subtype))if(prose.includes(term))errors.push(`다른 유형의 해설 어휘: ${term}`);

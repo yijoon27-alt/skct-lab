@@ -193,15 +193,15 @@ test('새 유형 문제은행·조건부 확률·두 도형 형식·집중훈련
 });
 test('유형별 공식 정리 · 검색·연습 연결·모바일',async({page})=>{
  await page.getByRole('button',{name:'유형별 공식 정리',exact:true}).click();
- await expect(page.locator('.tip-card')).toHaveCount(138);
- await expect(page.getByRole('button',{name:'이 유형 연습하기'})).toHaveCount(90);
+ await expect(page.locator('.tip-card')).toHaveCount(141);
+ await expect(page.getByRole('button',{name:'이 유형 연습하기'})).toHaveCount(93);
  const search=page.getByRole('textbox',{name:'유형·공식 검색'});
  // 문제 문장은 '용액'이라고 쓰지만 사람은 '소금물'로 찾는다.
  await search.fill('소금물');
  await expect(page.locator('.tip-card')).toHaveCount(11);
  await expect(page.locator('.tip-head b').first()).toHaveText('서로 다른 용액 혼합');
  await search.fill('기차');
- await expect(page.locator('.tip-card')).toHaveCount(4);
+ await expect(page.locator('.tip-card')).toHaveCount(6);
  await search.fill('존재하지않는낱말');
  await expect(page.locator('.empty h3')).toBeVisible();
  await search.fill('');

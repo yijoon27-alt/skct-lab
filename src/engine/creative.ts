@@ -4,7 +4,7 @@ import { creativeGuidance } from './guidance';
 import { eul, ro, wa } from './korean';
 import type { Difficulty, Template } from './types';
 const groups: [string,string,string[]][] = [
- ['speed','거리·속력·시간',['기본 이동','같은 거리 왕복','속력비·시간비','도착 시간차','마주 보는 이동','같은 방향 추월','선출발 후 추월','추월 후 왕복','원형 트랙 마주침','원형 트랙 추월','두 기차 통과','기차와 터널','기차와 다리','배의 상류·하류','영역 완전 통과','시간 단위 변환']],
+ ['speed','거리·속력·시간',['기본 이동','같은 거리 왕복','속력비·시간비','도착 시간차','마주 보는 이동','같은 방향 추월','선출발 후 추월','추월 후 왕복','원형 트랙 마주침','원형 트랙 추월','두 기차 통과','기차와 터널','기차와 다리','배의 상류·하류','영역 완전 통과','시간 단위 변환','한 지점 통과','터널 안 완전 은폐','왕복 평균 속력']],
  ['mix','농도·혼합',['서로 다른 용액 혼합','혼합 후 농도','목표 농도 혼합량','물 추가','물 증발','용액 일부 제거','제거 후 물 보충','혼합 후 증발','가중평균 농도','농도차 역비','연속 제거·보충']],
  ['work','작업량·일률',['두 사람 공동 작업','세 사람 공동 작업','한 명 먼저 작업','작업자 이탈','작업자 추가','효율 증가','효율 감소','협업 효율 저하','작업 시너지','설비 가동 생산량','남은 작업 시간']],
  ['cost','원가·정가·비용',['원가와 이익률','정가와 할인율','할인 후 이익','할인 전 가격 역산','이익·손실 합산','두 상품 가격 비교','연속 할인','연속 인상','2+1 행사','투자 수익률','판매 수수료','고정비·변동비','손익분기점','두 제품 개수 차이법','불량품 최소 판매가']],
@@ -13,15 +13,21 @@ const groups: [string,string,string[]][] = [
 ];
 export const creativeTemplates:Template[]=groups.flatMap(([family,category,names])=>names.map((name,i)=>{
  const easy:Record<string,number[]>={speed:[0,2,15],mix:[0,1,5,8],work:[0,1,9,10],cost:[0,1,3,8,9,11],ratio:[0,4,6,10,11,13,14,15],count:[0,1,2,3,7,13]};
- const hard:Record<string,number[]>={speed:[1,3,7,13],mix:[7,10],work:[4,7,8],cost:[2,5,14],ratio:[2,5,12],count:[4,5,10,11,16]};
+ const hard:Record<string,number[]>={speed:[1,3,7,13,17,18],mix:[7,10],work:[4,7,8],cost:[2,5,14],ratio:[2,5,12],count:[4,5,10,11,16]};
  const difficulty:Difficulty=easy[family].includes(i)?'easy':hard[family].includes(i)?'hard':'medium';
  return {id:`${family}-${i}`,name,category,area:'creative' as const,difficulty,complexity:difficulty==='easy'?'기본 관계 1개':difficulty==='hard'?'조건 3개 이상 또는 역산·경우 분기':'조건 2개 또는 단위 변환',generate:(seed:number)=>build(`${family}-${i}`,category,'creative',difficulty,seed,generate(family,i,seed))};
 }));
+const harmonicPairs:[number,number][]=(()=>{const out:[number,number][]=[];
+ for(let m=2;m<=7;m++)for(let n=1;n<m;n++){if(gcd(m,n)!==1)continue;
+  for(let k=1;k<=10;k++){const fast=2*m*(m+n)*k,slow=2*n*(m+n)*k;if(fast<=120&&slow>=6)out.push([fast,slow]);}}
+ return out;})();
 function chooseMemo(n:number,k:number):string {if(k<0||k>n)return '0';const m=Math.min(k,n-k);if(m===0)return '1';return `(${Array.from({length:m},(_,j)=>n-j).join('*')})/(${Array.from({length:m},(_,j)=>j+1).join('*')})`;}
 function factorialMemo(n:number):string {return Array.from({length:n},(_,j)=>j+1).join('*')||'1';}
 function generate(family:string,i:number,seed:number):Body {
  const r=rng(seed), a=r(3,8),b=r(2,5),c=r(2,6),d=r(2,5);
  let question='',expression='',unit='',formula='',signal='',shortcut='',memo='';
+ // 조건이 맞는 문항에만 더 빠른 변형 최단풀이를 붙인다. -1이면 유형의 기본 풀이를 쓴다.
+ let variant=-1;
  let facts:Record<string,number>={};
  const steps:Body['steps']=[];
  const step=(label:string,e:string)=>{const v=calculate(e);steps.push({label,expression:e,value:v});return v;};
@@ -32,7 +38,16 @@ function generate(family:string,i:number,seed:number):Body {
    case 0:question=`자동차가 시속 ${slow}km로 ${c*60}분 동안 일정하게 이동했다. 이동 거리는?`;expression=`${slow}*${c}`;unit='km';break;
    case 1:question=`편도 ${dist}km인 같은 길을 갈 때는 시속 ${slow}km, 올 때는 시속 ${fast}km로 이동했다. 휴식 없이 왕복하는 데 걸린 시간은?`;expression=`(${dist}/${slow}+${dist}/${fast})*60`;break;
    case 2:question=`동일한 거리를 이동하는 A와 B의 속력비는 ${a}:${b}이다. A가 ${t}분 걸렸다면 B의 이동 시간은?`;expression=`${t}*${a}/${b}`;break;
-   case 3:question=`같은 구간을 시속 ${slow}km로 달릴 때보다 시속 ${fast}km로 달릴 때 ${t}분 일찍 도착한다. 구간의 길이는?`;expression=`(${t}/60)/ (1/${slow}-1/${fast})`;unit='km';break;
+   case 3:{
+    // 거리가 같으면 시간비는 속력비의 역비다. 속력비 slow:fast = a:(a+b)를 약분한 m:n에서
+    // 시간비는 n:m이고 두 수의 차 n-m칸이 곧 주어진 시간차다. 한 칸이 정수 분으로 떨어질 때만
+    // 이 풀이가 실제로 더 빠르므로, 떨어지지 않으면 곱÷차 기본 풀이와 그 메모식을 쓴다.
+    const share=gcd(a,a+b),m=a/share,n=(a+b)/share,step1=t/(n-m);
+    question=`같은 구간을 시속 ${slow}km로 달릴 때보다 시속 ${fast}km로 달릴 때 ${t}분 일찍 도착한다. 구간의 길이는?`;
+    expression=`(${t}/60)/ (1/${slow}-1/${fast})`;
+    if(Number.isInteger(step1)){variant=0;memo=`${slow}*${n*step1}/60`;}
+    else memo=`(${t}/60)*${slow}*${fast}/(${fast}-${slow})`;
+    unit='km';}break;
    case 4:question=`${dist}km 떨어진 두 차량이 같은 시각에 서로를 향해 시속 ${slow}km와 ${fast}km로 출발한다. 몇 분 후 만나는가?`;expression=`${dist}/(${slow}+${fast})*60`;break;
    case 5:question=`시속 ${slow}km인 차량의 ${t}km 뒤에서 시속 ${fast}km인 차량이 같은 방향으로 동시에 출발한다. 추월까지 걸리는 시간은?`;expression=`${t}/(${fast}-${slow})*60`;break;
    case 6:question=`A가 시속 ${slow}km로 출발하고 ${t}분 뒤 B가 같은 곳에서 시속 ${fast}km로 따라 출발했다. B 출발 후 A를 따라잡기까지 몇 분인가?`;expression=`${slow}*${t}/(${fast}-${slow})`;break;
@@ -48,6 +63,24 @@ function generate(family:string,i:number,seed:number):Body {
     const unit=up*down/gcd(120*speed,up*down),perUnit=120*speed/gcd(120*speed,up*down);
     facts.water=water;facts.slow=speed;facts.dist=unit*r(1,Math.max(1,Math.floor(480/perUnit)));}question=`정수에서 시속 ${facts.slow}km인 배가 유속 ${facts.water}km인 강을 따라 편도 ${facts.dist}km를 왕복한다. 휴식 시간은 없을 때 총 소요 시간은?`;expression=`(${facts.dist}/(${facts.slow}-${facts.water})+${facts.dist}/(${facts.slow}+${facts.water}))*60`;break;
    case 14:facts.length=a*10;facts.region=c*10;question=`지름 ${facts.length}km의 원형 기상 현상이 폭 ${facts.region}km의 직선 구간을 수직으로 시속 ${slow}km로 지난다. 맨 앞부분 진입부터 맨 뒷부분 이탈까지 시간은?`;expression=`(${facts.length}+${facts.region})/${slow}*60`;break;
+   // 전봇대·신호등은 길이가 0이라 더할 것이 없다. 터널·다리와 가장 많이 혼동되는 지점이다.
+   case 16:{const mps=[10,15,20,25,30][r(0,4)];let seconds=r(Math.ceil(60/mps),Math.floor(400/mps));
+    if(mps%10&&seconds%2)seconds++;                                   // 기차 길이를 10m 단위로 맞춘다
+    const length=mps*seconds;facts={length,speed:mps*3.6};
+    question=`길이 ${length}m인 기차가 시속 ${facts.speed}km로 전봇대를 완전히 지난다. 지나는 데 걸리는 시간은?`;
+    expression=`${length}/(${facts.speed}*1000/3600)`;unit='초';}break;
+   // 완전히 빠져나가는 시간과 부호가 반대다. 터널이 기차보다 길어야 가려지는 구간이 생긴다.
+   case 17:{const mps=[10,15,20,25,30][r(0,4)];const length=10*r(6,24);
+    let hidden=r(4,30);if(mps%10&&hidden%2)hidden++;                  // 터널 길이도 10m 단위로 맞춘다
+    const region=length+mps*hidden;facts={length,speed:mps*3.6,region};
+    question=`길이 ${length}m인 기차가 시속 ${facts.speed}km로 길이 ${region}m인 터널을 지난다. 기차 전체가 터널 안에 완전히 가려져 있는 시간은?`;
+    expression=`(${region}-${length})/(${facts.speed}*1000/3600)`;unit='초';}break;
+   // 거리가 같은 왕복의 평균 속력은 산술평균이 아니라 조화평균이다.
+   case 18:{const [fastLeg,slowLeg]=harmonicPairs[r(0,harmonicPairs.length-1)],back=r(0,1)===1;
+    // 평균 속력이 정수로 떨어지지 않으면 선지 간격이 1/19처럼 좁아져 계산이 아니라 눈대중이 된다.
+    const going=back?slowLeg:fastLeg,returning=back?fastLeg:slowLeg;facts={going,returning};
+    question=`같은 길을 갈 때는 시속 ${going}km, 올 때는 시속 ${returning}km로 왕복했다. 왕복 전체의 평균 속력은?`;
+    expression=`2*${going}*${returning}/(${going}+${returning})`;unit='km/h';}break;
    default:question=`시속 ${slow}km로 ${t*60}초 동안 이동한 거리는?`;expression=`${slow}*${t}*60/3600*1000`;unit='m';
   }
  } else if(family==='mix') {
@@ -202,6 +235,6 @@ function generate(family:string,i:number,seed:number):Body {
  // 유형 = 핵심 공식 = 인식 신호 = 최단풀이. One table, one key, checked again in verify.ts.
  const guide=creativeGuidance[`${family}-${i}`];
  formula=guide.formula;signal=guide.signal;
- shortcut=`${guide.method} 메모장 계산식: ${memo||expression}`;
+ shortcut=`${(variant>=0?guide.methods?.[variant]:undefined)??guide.method} 메모장 계산식: ${memo||expression}`;
  return {question,answer,unit,facts,steps,formula,signal,shortcut,memo:memo||expression};
 }

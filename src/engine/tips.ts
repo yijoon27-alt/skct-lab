@@ -72,9 +72,9 @@ export interface TipGroup { area:Area; section:string; title:string; aliases:str
 const layout:[Area,string,string,string,string[]][]=[
  ['creative','거리·속력·시간','기본·단위','속도 시속 분속 초속 단위환산 km m',['speed-0','speed-15','speed-2']],
  ['creative','거리·속력·시간','만남·추월','마주보기 따라잡기 추격 만남 동시출발',['speed-4','speed-5','speed-6','speed-7','speed-3']],
- ['creative','거리·속력·시간','왕복·강물','배 강물 유속 상류 하류 왕복 평균속력',['speed-1','speed-13']],
+ ['creative','거리·속력·시간','왕복·강물','배 강물 유속 상류 하류 왕복 평균속력',['speed-1','speed-13','speed-18']],
  ['creative','거리·속력·시간','원형 트랙','트랙 운동장 호수 둘레 한바퀴',['speed-8','speed-9']],
- ['creative','거리·속력·시간','기차·통과','기차 열차 터널 다리 통과 길이',['speed-10','speed-11','speed-12','speed-14']],
+ ['creative','거리·속력·시간','기차·통과','기차 열차 터널 다리 통과 길이',['speed-10','speed-11','speed-12','speed-14','speed-16','speed-17']],
  ['creative','농도·혼합','섞기','소금물 설탕물 용액 소금 농도 혼합',['mix-0','mix-1','mix-8','mix-2','mix-9']],
  ['creative','농도·혼합','물 추가·증발','소금물 물타기 증발 묽게 진하게',['mix-3','mix-4','mix-7']],
  ['creative','농도·혼합','덜어내고 채우기','소금물 퍼내기 덜어내기 보충',['mix-5','mix-6','mix-10']],
