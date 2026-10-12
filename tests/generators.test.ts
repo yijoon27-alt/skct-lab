@@ -11,8 +11,9 @@ describe('138개 유형의 독립 검산',()=>{
  it('필터·최근 문항 회피',()=>{const qs=makeSet({area:'creative',seed:987,difficulty:'medium',subtypes:['speed-6']});const recent=qs.map(q=>q.question);const more=makeSet({area:'creative',seed:987,difficulty:'medium',subtypes:['speed-6'],recent});expect(more.every(q=>!recent.includes(q.question))).toBe(true);});
 });
 describe('안전한 계산기',()=>{
- it.each([['1+2*3',7],['(1+2)*3',9],['-2*(3.5-1)',-5],['0.1+0.2',0.3],['1/3+2/3',1]])('%s',(e,v)=>expect(calculate(e)).toBeCloseTo(v));
- it.each(['1/0','alert(1)','2**3','(1+2','1;2','2(3)','NaN'])('잘못된 입력 %s',e=>expect(()=>calculate(e)).toThrow());
+ it.each([['1+2*3',7],['(1+2)*3',9],['-2*(3.5-1)',-5],['0.1+0.2',0.3],['1/3+2/3',1],['1+2×3',7],['6÷2',3],['−5+1',-4]])('%s',(e,v)=>expect(calculate(e)).toBeCloseTo(v));
+ // 넘패드 라우팅이 ,와 =를 입력 시점에 걸러내는 이유를 고정한다.
+ it.each(['1/0','alert(1)','2**3','(1+2','1;2','2(3)','NaN','1,5','1,000','1=2'])('잘못된 입력 %s',e=>expect(()=>calculate(e)).toThrow());
 });
 it('모든 세부 유형은 집중훈련 20개 서로 다른 문항을 제공',()=>{for(const t of practiceTemplates){const qs=makeSet({area:t.area,subtypes:[t.id],seed:77});expect(new Set(qs.map(q=>q.question)).size,t.id).toBe(20);}});
 
