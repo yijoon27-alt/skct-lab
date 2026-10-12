@@ -8,10 +8,10 @@ import { calculate,format,legacyFormat } from '../src/engine/math';
 import { emptyStore,parseBackup } from '../src/engine/storage';
 import { createSession,grade } from '../src/engine/session';
 describe('유형 = 핵심 공식 = 인식 신호 = 최단풀이',()=>{
- it('창의수리 86개 유형이 빠짐없이, 그리고 그만큼만 해설 표에 등록',()=>{
+ it('창의수리 89개 유형이 빠짐없이, 그리고 그만큼만 해설 표에 등록',()=>{
   expect([...Object.keys(creativeGuidance)].sort()).toEqual(creativeTemplates.map(t=>t.id).sort());
  });
- it('138개 유형 × 50시드의 해설 메타데이터·문장 조사·문항 분류가 유형과 일치',()=>{
+ it('141개 유형 × 50시드의 해설 메타데이터·문장 조사·문항 분류가 유형과 일치',()=>{
   for(const t of templates)for(let s=1;s<=50;s++){
    const q=t.generate(s*4099);
    expect(guidanceErrors(q),q.id).toEqual([]);

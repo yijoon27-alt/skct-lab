@@ -17,6 +17,43 @@ test('실전 잠금·이전 이동 금지·종료 후 해설',async({page})=>{
 test('단축키·입력 격리·자동 다음',async({page})=>{
  await page.getByRole('button',{name:'시작',exact:true}).click();await page.keyboard.press('m');await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toBeFocused();await page.keyboard.type('12345');await expect(page.getByRole('radio').first()).toHaveAttribute('aria-checked','false');await page.getByRole('heading',{level:1}).click();const answer=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).session.questions[0].correctAnswer,key);await page.getByLabel('정답이면 자동 다음').check();await page.getByRole('heading',{level:1}).click();await page.keyboard.press(String(answer+1));await page.keyboard.press('Enter');await expect(page.locator('.question-count')).toHaveText('02 / 20');
 });
+test('넘패드는 계산기 전용 · 상단 숫자열은 보기 선택',async({page})=>{
+ // Playwright의 Numpad* 키는 NumLock이 꺼진 넘패드를 모사한다(e.code는 Numpad5, e.key는 'Clear').
+ // 그래서 e.code로 판별하는지와 연타 중 글자를 잃지 않는지를 함께 고정한다.
+ await page.getByRole('button',{name:'시작',exact:true}).click();await page.getByRole('heading',{level:1}).click();
+ for(const k of ['Numpad1','Numpad2','NumpadAdd','Numpad3','NumpadMultiply','Numpad4','NumpadDecimal','Numpad5','NumpadDivide','Numpad9'])await page.keyboard.press(k);
+ await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('12+3*4.5/9');await expect(page.getByRole('textbox',{name:'계산식'})).toBeFocused();
+ await expect(page.locator('.toast')).toContainText('Num Lock');
+ await page.keyboard.press('NumpadEnter');await expect(page.getByLabel('계산 결과')).toHaveText('13.5');
+ for(let i=0;i<5;i++)await expect(page.getByRole('radio').nth(i)).toHaveAttribute('aria-checked','false');
+ await page.keyboard.press('Escape');await expect(page.getByRole('textbox',{name:'계산식'})).not.toBeFocused();
+ await page.keyboard.press('3');await expect(page.getByRole('radio').nth(2)).toHaveAttribute('aria-checked','true');
+ await page.keyboard.press('m');await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toBeFocused();
+ await page.keyboard.press('Numpad7');await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toHaveValue('');
+ await page.keyboard.type('7');await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toHaveValue('7');await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('12+3*4.5/9');
+});
+// Playwright의 Numpad* 키는 NumLock 꺼진 상태만 모사하므로, 켜진 상태(e.key가 실제 문자)는
+// 합성 KeyboardEvent로 확인한다. 브라우저 기본 문자 삽입은 일어나지 않지만 핸들러 계약은 그대로 고정된다.
+test('NumLock 켜진 넘패드 · 애플 키패드 Clear와 =',async({page})=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+await page.getByRole('button',{name:'시작',exact:true}).click();
+ await page.getByRole('heading',{level:1}).click();
+ const send=(pairs:[string,string][])=>page.evaluate(ps=>{for(const [code,key] of ps)(document.activeElement||document.body).dispatchEvent(new KeyboardEvent('keydown',{code,key,bubbles:true,cancelable:true}));},pairs);
+ // NumLock 켜짐: e.key가 실제 문자다.
+ await send([['Numpad5','5'],['Numpad0','0'],['NumpadSubtract','-'],['Numpad8','8'],['NumpadDecimal','.'],['Numpad5','5']]);
+ await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('50-8.5');
+ await expect(page.locator('.toast')).toHaveCount(0);           // NumLock 켜짐이면 안내하지 않는다
+ await send([['NumpadEnter','Enter']]);
+ await expect(page.getByLabel('계산 결과')).toHaveText('41.5');
+ await send([['NumLock','Clear']]);                              // 애플 키패드 Clear
+ await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('');
+ await expect(page.getByLabel('계산 결과')).toHaveText('0');
+ for(let i=0;i<5;i++)await expect(page.getByRole('radio').nth(i)).toHaveAttribute('aria-checked','false');
+ // 애플 키패드 =는 계산을 실행한다. 리터럴 '='로 들어가면 파서가 식 전체를 거부한다.
+ await send([['Numpad2','2'],['NumpadAdd','+'],['Numpad2','2'],['NumpadEqual','=']]);
+ await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('2+2');await expect(page.getByLabel('계산 결과')).toHaveText('4');
+ expect(errors).toEqual([]);
+});
 test('모바일·다크모드·계산오류·넘침',async({page})=>{
  await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'다크 모드',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','dark');await page.getByRole('textbox',{name:'문제별 메모장'}).scrollIntoViewIfNeeded();await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toBeVisible();await page.getByRole('textbox',{name:'계산식'}).fill('1/0');await page.getByRole('textbox',{name:'계산식'}).press('Enter');await expect(page.getByLabel('계산 결과')).toContainText('0으로');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'docs/mobile.png',fullPage:true});
 });
@@ -156,15 +193,15 @@ test('새 유형 문제은행·조건부 확률·두 도형 형식·집중훈련
 });
 test('유형별 공식 정리 · 검색·연습 연결·모바일',async({page})=>{
  await page.getByRole('button',{name:'유형별 공식 정리',exact:true}).click();
- await expect(page.locator('.tip-card')).toHaveCount(138);
- await expect(page.getByRole('button',{name:'이 유형 연습하기'})).toHaveCount(90);
+ await expect(page.locator('.tip-card')).toHaveCount(141);
+ await expect(page.getByRole('button',{name:'이 유형 연습하기'})).toHaveCount(93);
  const search=page.getByRole('textbox',{name:'유형·공식 검색'});
  // 문제 문장은 '용액'이라고 쓰지만 사람은 '소금물'로 찾는다.
  await search.fill('소금물');
  await expect(page.locator('.tip-card')).toHaveCount(11);
  await expect(page.locator('.tip-head b').first()).toHaveText('서로 다른 용액 혼합');
  await search.fill('기차');
- await expect(page.locator('.tip-card')).toHaveCount(4);
+ await expect(page.locator('.tip-card')).toHaveCount(6);
  await search.fill('존재하지않는낱말');
  await expect(page.locator('.empty h3')).toBeVisible();
  await search.fill('');
