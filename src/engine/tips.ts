@@ -108,6 +108,22 @@ export function tipGroups():TipGroup[]{
   return t&&guide?[{id,name:t.name,area:t.area,category:t.category,difficulty:t.difficulty,inPool:practiceTemplates.some(p=>p.id===id),...guide}]:[];
  })}));
 }
+// 유형별 훈련의 분야 선택. 공식 정리 화면과 같은 분류(layout)를 그대로 쓰므로
+// 두 화면의 분류가 갈라질 수 없다. 신규 출제 풀에 없는 유형과 고른 난도에 없는
+// 분야는 빼고 내려보내, 고를 수는 있는데 출제가 안 되는 조합이 생기지 않게 한다.
+export interface PracticeField { section:string; groups:{title:string;ids:string[]}[]; ids:string[] }
+export function practiceFields(area:Area,difficulty?:Difficulty):PracticeField[]{
+ const out:PracticeField[]=[];
+ for(const g of tipGroups()){
+  if(g.area!==area)continue;
+  const ids=g.tips.filter(t=>t.inPool&&(!difficulty||t.difficulty===difficulty)).map(t=>t.id);
+  if(!ids.length)continue;
+  let field=out.find(f=>f.section===g.section);
+  if(!field){field={section:g.section,groups:[],ids:[]};out.push(field);}
+  field.groups.push({title:g.title,ids});field.ids.push(...ids);
+ }
+ return out;
+}
 // 첫 시도 기록만 쓴다. 풀이를 보고 답한 문항과 재도전은 getStats가 이미 걸러낸다.
 export interface WeakTip extends Tip { accuracy:number; total:number; seconds:number }
 export function weakTips(attempts:Attempt[],limit=6):WeakTip[]{

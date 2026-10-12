@@ -191,6 +191,39 @@ test('새 유형 문제은행·조건부 확률·두 도형 형식·집중훈련
   await page.getByRole('button',{name:'풀이 보기',exact:true}).click();await expect(page.locator('.explanation')).toBeVisible();
  }
 });
+test('분야로 골라 랜덤 20문항 · 문제은행 분야 바로 시작',async({page})=>{
+ await page.getByRole('button',{name:'유형별 집중 훈련',exact:true}).click();
+ // 큰 분야 하나만 눌러도 그 안의 모든 유형이 선택된다.
+ await page.locator('.field-main',{hasText:'거리·속력·시간'}).click();
+ await expect(page.getByText(/^\d+개 유형 선택$/).first()).toBeVisible();
+ await page.getByRole('button',{name:/선택한 분야로 20문항 시작/}).click();
+ const replace=page.getByRole('button',{name:'마치고 새로 시작',exact:true});if(await replace.isVisible())await replace.click();
+ await expect(page.locator('.question-text')).toBeVisible();
+ const inField=async()=>page.evaluate(key=>{const qs=JSON.parse(localStorage.getItem(key)!).session.questions as {subtype:string;category:string}[];
+  return {count:qs.length,categories:[...new Set(qs.map(q=>q.category))],types:new Set(qs.map(q=>q.subtype)).size};},key);
+ const picked=await inField();
+ expect(picked.count).toBe(20);
+ expect(picked.categories).toEqual(['거리·속력·시간']);     // 고른 분야 밖의 문항이 섞이지 않는다
+ expect(picked.types).toBeGreaterThan(1);                  // 한 유형만 반복되지 않는다
+ // 세부 분야만 눌러 더 좁힐 수도 있다.
+ await page.getByRole('button',{name:'유형별 집중 훈련',exact:true}).click();
+ await page.getByRole('button',{name:'선택 해제',exact:true}).click();
+ await page.locator('.field-subs button',{hasText:'기차·통과'}).click();
+ await page.getByRole('button',{name:/선택한 분야로 20문항 시작/}).click();
+ const replace2=page.getByRole('button',{name:'마치고 새로 시작',exact:true});if(await replace2.isVisible())await replace2.click();
+ const narrowed=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).session.questions.map((q:{subtype:string})=>q.subtype),key);
+ expect([...new Set(narrowed as string[])].every(id=>['speed-10','speed-11','speed-12','speed-14','speed-16','speed-17'].includes(id))).toBe(true);
+ // 문제은행에서도 분야를 골라 바로 시작한다.
+ await page.getByRole('button',{name:'문제은행',exact:true}).click();
+ const start=page.getByRole('button',{name:/이 분야 랜덤 20문항/});
+ await expect(start).toBeDisabled();
+ await page.getByLabel('문제은행 분야').selectOption('농도·혼합');
+ await expect(page.locator('.bank-row').first()).toContainText('농도·혼합');
+ await start.click();
+ const replace3=page.getByRole('button',{name:'마치고 새로 시작',exact:true});if(await replace3.isVisible())await replace3.click();
+ const mixed=await inField();
+ expect(mixed.categories).toEqual(['농도·혼합']);
+});
 test('유형별 공식 정리 · 검색·연습 연결·모바일',async({page})=>{
  await page.getByRole('button',{name:'유형별 공식 정리',exact:true}).click();
  await expect(page.locator('.tip-card')).toHaveCount(141);

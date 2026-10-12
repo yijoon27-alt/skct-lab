@@ -1,7 +1,7 @@
 import { describe,expect,it } from 'vitest';
 import { makeSet,practiceTemplates,templates,templateById } from '../src/engine/bank';
 import { creativeGuidance } from '../src/engine/guidance';
-import { tipGroups,tipGuidance,weakTips } from '../src/engine/tips';
+import { tipGroups,tipGuidance,weakTips,practiceFields } from '../src/engine/tips';
 import { emptyStore } from '../src/engine/storage';
 import { createSession,grade } from '../src/engine/session';
 describe('유형별 공식 정리',()=>{
@@ -61,4 +61,39 @@ it('자주 틀리는 유형은 첫 시도 기록만으로, 정답률이 낮은 �
  expect(tips[0].formula).toBe(creativeGuidance['ratio-12'].formula);
  expect(tips.map(t=>t.id)).not.toContain('mix-6');
  expect(weakTips(emptyStore().attempts)).toEqual([]);
+});
+
+describe('유형별 훈련의 분야 선택',()=>{
+ // 고를 수는 있는데 출제가 안 되는 조합이 생기면 사용자는 토스트만 보고 이유를 모른다.
+ for(const area of ['creative','sequence'] as const){
+  it(`${area}: 신규 출제 풀 전체가 빠짐없이 한 분야에만 들어간다`,()=>{
+   const fields=practiceFields(area);
+   const ids=fields.flatMap(f=>f.ids);
+   expect(ids.length,'같은 유형이 두 분야에 들어감').toBe(new Set(ids).size);
+   expect(ids.sort()).toEqual(practiceTemplates.filter(t=>t.area===area).map(t=>t.id).sort());
+   for(const f of fields){
+    expect(f.ids.sort()).toEqual(f.groups.flatMap(g=>g.ids).sort());
+    expect(f.groups.every(g=>g.ids.length>0),`${f.section}에 빈 세부 분야`).toBe(true);
+   }
+  });
+  it(`${area}: 고른 분야는 반드시 20문항을 뽑을 수 있다`,()=>{
+   for(const f of practiceFields(area)){
+    expect(makeSet({area,subtypes:f.ids,seed:31}),f.section).toHaveLength(20);
+    for(const g of f.groups)expect(makeSet({area,subtypes:g.ids,seed:31}),`${f.section} ${g.title}`).toHaveLength(20);
+   }
+  });
+  it(`${area}: 난도를 좁히면 그 난도의 유형만 남고 빈 분야는 사라진다`,()=>{
+   for(const difficulty of ['medium','hard'] as const){
+    for(const f of practiceFields(area,difficulty)){
+     expect(f.ids.length,`${f.section} 빈 분야가 남음`).toBeGreaterThan(0);
+     for(const id of f.ids)expect(templateById(id)!.difficulty,id).toBe(difficulty);
+     expect(makeSet({area,subtypes:f.ids,difficulty,seed:31})).toHaveLength(20);
+    }
+   }
+  });
+ }
+ it('공식 정리 화면과 같은 분류를 쓴다',()=>{
+  const fromTips=tipGroups().filter(g=>g.area==='creative').map(g=>g.section);
+  expect(practiceFields('creative').map(f=>f.section)).toEqual([...new Set(fromTips)]);
+ });
 });
