@@ -15,9 +15,9 @@ test('실전 잠금·이전 이동 금지·종료 후 해설',async({page})=>{
  await expect(page.getByText('답안이 잠겼습니다.',{exact:false})).toBeVisible();await expect(page.getByText('SKCT 최단풀이',{exact:true})).not.toBeVisible();await expect(page.getByRole('radio').nth(1)).toBeDisabled();await page.getByRole('button',{name:'다음 문제',exact:false}).click();await expect(page.getByRole('button',{name:'이전',exact:false}).first()).toBeDisabled();await page.getByRole('button',{name:'제출하기',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'제출하기',exact:true}).click();await expect(page.getByText('SESSION COMPLETE')).toBeVisible();await expect(page.getByText('SKCT 최단풀이',{exact:true})).toBeVisible();
 });
 test('단축키·입력 격리·자동 다음',async({page})=>{
- await page.getByRole('button',{name:'시작',exact:true}).click();await page.keyboard.press('m');await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toBeFocused();await page.keyboard.type('12345');await expect(page.getByRole('radio').first()).toHaveAttribute('aria-checked','false');await page.getByRole('heading',{level:1}).click();const answer=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).session.questions[0].correctAnswer,key);await page.getByLabel('정답이면 자동 다음').check();await page.getByRole('heading',{level:1}).click();await page.keyboard.press(String(answer+1));await page.keyboard.press('Enter');await expect(page.locator('.question-count')).toHaveText('02 / 20');
+ await page.getByRole('button',{name:'시작',exact:true}).click();await page.keyboard.press('m');await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toBeFocused();await page.keyboard.type('12345');await expect(page.getByRole('radio').first()).toHaveAttribute('aria-checked','false');await page.getByRole('heading',{level:1}).click();const answer=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)!).session.questions[0].correctAnswer,key);await page.getByLabel('정답이면 자동 다음').check();await page.getByRole('heading',{level:1}).click();await page.keyboard.press('Shift+Digit'+(answer+1));await page.keyboard.press('Enter');await expect(page.locator('.question-count')).toHaveText('02 / 20');
 });
-test('넘패드는 계산기 전용 · 상단 숫자열은 보기 선택',async({page})=>{
+test('넘패드 계산기 입력 · 보기 선택은 Shift+숫자열',async({page})=>{
  // Playwright의 Numpad* 키는 NumLock이 꺼진 넘패드를 모사한다(e.code는 Numpad5, e.key는 'Clear').
  // 그래서 e.code로 판별하는지와 연타 중 글자를 잃지 않는지를 함께 고정한다.
  await page.getByRole('button',{name:'시작',exact:true}).click();await page.getByRole('heading',{level:1}).click();
@@ -27,10 +27,27 @@ test('넘패드는 계산기 전용 · 상단 숫자열은 보기 선택',async(
  await page.keyboard.press('NumpadEnter');await expect(page.getByLabel('계산 결과')).toHaveText('13.5');
  for(let i=0;i<5;i++)await expect(page.getByRole('radio').nth(i)).toHaveAttribute('aria-checked','false');
  await page.keyboard.press('Escape');await expect(page.getByRole('textbox',{name:'계산식'})).not.toBeFocused();
- await page.keyboard.press('3');await expect(page.getByRole('radio').nth(2)).toHaveAttribute('aria-checked','true');
+ await page.keyboard.press('Shift+Digit3');await expect(page.getByRole('radio').nth(2)).toHaveAttribute('aria-checked','true');
  await page.keyboard.press('m');await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toBeFocused();
  await page.keyboard.press('Numpad7');await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toHaveValue('');
  await page.keyboard.type('7');await expect(page.getByRole('textbox',{name:'문제별 메모장'})).toHaveValue('7');await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('12+3*4.5/9');
+});
+// 2026-10-26: 넘패드가 없는 노트북에서 계산기에 숫자가 안 들어간다는 신고. 계산기 칸을 클릭했거나
+// C를 눌렀을 때만 먹어서 "됐다 안 됐다" 하는 것처럼 보였다. 포커스가 밖에 있어도 들어가야 한다.
+test('계산기를 클릭하지 않아도 숫자열로 바로 입력된다',async({page})=>{
+ await page.getByRole('button',{name:'시작',exact:true}).click();await page.getByRole('heading',{level:1}).click();
+ await expect(page.getByRole('textbox',{name:'계산식'})).not.toBeFocused();
+ for(const k of ['Digit7','Digit8','Shift+Equal','Digit9','Shift+Digit8','Digit2','Period','Digit5'])await page.keyboard.press(k);
+ await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('78+9*2.5');await expect(page.getByRole('textbox',{name:'계산식'})).toBeFocused();
+ await page.keyboard.press('Enter');await expect(page.getByLabel('계산 결과')).toHaveText('100.5');
+ // 계산기에 친 숫자가 보기 선택으로 새면 안 된다.
+ for(let i=0;i<5;i++)await expect(page.getByRole('radio').nth(i)).toHaveAttribute('aria-checked','false');
+ // 포커스를 뺀 뒤에도 같은 경로가 다시 열린다. 한 번 되고 마는 것이 이번 증상이었다.
+ await page.keyboard.press('Escape');await expect(page.getByRole('textbox',{name:'계산식'})).not.toBeFocused();
+ await page.keyboard.press('Digit6');await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('78+9*2.56');
+ await page.keyboard.press('Escape');await page.keyboard.press('Shift+Digit4');
+ await expect(page.getByRole('radio').nth(3)).toHaveAttribute('aria-checked','true');
+ await expect(page.getByRole('textbox',{name:'계산식'})).toHaveValue('78+9*2.56');
 });
 // Playwright의 Numpad* 키는 NumLock 꺼진 상태만 모사하므로, 켜진 상태(e.key가 실제 문자)는
 // 합성 KeyboardEvent로 확인한다. 브라우저 기본 문자 삽입은 일어나지 않지만 핸들러 계약은 그대로 고정된다.
