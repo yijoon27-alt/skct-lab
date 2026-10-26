@@ -11,7 +11,10 @@ export function Tools({note,onNote,restore,focusRef,questionKey}:{questionKey:st
  // 계산식은 ref에도 동기로 적어 둔다. 넘패드를 연타하면 한 번의 렌더 사이에 여러 키가 들어오는데,
  // 그때 state 클로저를 읽으면 직전 글자를 잃거나 '='가 빈 식을 계산한다.
  const exprRef=useRef('');
- const writeExpr=(next:string)=>{exprRef.current=next;setExpr(next);};
+ // 입력칸의 DOM 값도 같이 맞춘다. 전역 핸들러가 넣은 첫 글자는 React 상태에만 있는데,
+ // 포커스가 옮겨간 뒤 브라우저는 그 순간의 DOM 값 위에 다음 글자를 끼워 넣는다. React가
+ // 아직 반영하지 못했으면 앞 글자가 통째로 덮어씌워진다(느린 기기·CI에서 '78+9'가 '+9'가 됐다).
+ const writeExpr=(next:string)=>{exprRef.current=next;const el=calcRef.current;if(el&&el.value!==next)el.value=next;setExpr(next);};
  useEffect(()=>{writeExpr('');setResult('0');setError('');},[questionKey]);
  useEffect(()=>{const focus=(e:Event)=>{setOpen(true);setTimeout(()=>{if((e as CustomEvent).detail==='memo')focusRef.current?.focus();else calcRef.current?.focus();},0);};window.addEventListener('skct:focus-tool',focus);return()=>window.removeEventListener('skct:focus-tool',focus);},[focusRef]);
  const input=(key:string)=>{setError('');if(key==='C'){writeExpr('');setResult('0');}else if(key==='⌫')writeExpr(exprRef.current.slice(0,-1));else if(key==='='){try{const n=calculate(exprRef.current);setResult(Number(n.toPrecision(12)).toString());}catch(e){setError((e as Error).message);}}else writeExpr(exprRef.current+key);};
